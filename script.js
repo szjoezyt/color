@@ -193,10 +193,13 @@ function createSwatchElement(swatch, isSelected = false) {
     const div = document.createElement('div');
     div.classList.add('swatch-item');
     div.dataset.id = swatch.id; // Original swatch ID
-    div.dataset.image = swatch.image; // Store image path for modal
+    div.dataset.image = swatch.image; // Store small image path for initial display
 
     if (isSelected) {
         div.dataset.instanceId = generateInstanceId(); // Unique ID for this specific instance
+        // Store big image path
+        const bigImagePath = swatch.image.replace('images', 'imagesbig');
+        div.dataset.bigImage = bigImagePath;
     }
 
     const img = document.createElement('img');
@@ -359,9 +362,10 @@ function toggleAllCategories() {
 }
 
 // Function to open the image modal
-function openImageModal(imageSrc) {
-    if (imageSrc) {
-        modalImage.src = imageSrc;
+function openImageModal(swatchElement) {
+    const bigImageSrc = swatchElement.dataset.bigImage;
+    if (bigImageSrc) {
+        modalImage.src = bigImageSrc;
         imageModal.classList.add('show'); // Use class to trigger display and animation
     }
 }
@@ -415,7 +419,7 @@ selectedSwatchesContainer.addEventListener('click', (event) => {
     const swatchItem = target.closest('.swatch-item'); // Ensure click is within a swatch item
 
     if (clickedImage && swatchItem) {
-        openImageModal(clickedImage.src); // Use the clicked image's src
+        openImageModal(swatchItem); // Pass the swatch item to openImageModal
     }
 });
 
