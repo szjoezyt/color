@@ -229,6 +229,8 @@ function createSwatchElement(swatch, isSelected = false) {
 // Function to populate the category menu
 function populateMenu() {
     categoryMenu.innerHTML = ''; // Clear existing menu items if any
+    const fragment = document.createDocumentFragment();
+    
     categories.forEach(category => {
         const details = document.createElement('details');
         details.dataset.categoryId = category.id; // Add identifier
