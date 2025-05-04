@@ -192,16 +192,20 @@ function generateInstanceId() {
 function createSwatchElement(swatch, isSelected = false) {
     const div = document.createElement('div');
     div.classList.add('swatch-item');
-    div.dataset.id = swatch.id;
-    div.dataset.image = swatch.image;
+    div.dataset.id = swatch.id; // Original swatch ID
+    div.dataset.image = swatch.image; // Store small image path for initial display
 
     if (isSelected) {
-        div.dataset.instanceId = generateInstanceId();
+        div.dataset.instanceId = generateInstanceId(); // Unique ID for this specific instance
+        // Store big image path
+        const bigImagePath = swatch.image.replace('images', 'imagesbig');
+        div.dataset.bigImage = bigImagePath;
     }
 
     const img = document.createElement('img');
+    img.src = swatch.image;
     img.alt = swatch.name;
-    img.dataset.src = swatch.image; // 使用 data-src 存储图片地址
+    img.loading = 'lazy'; // Lazy load images
 
     const span = document.createElement('span');
     span.textContent = swatch.name;
@@ -210,25 +214,17 @@ function createSwatchElement(swatch, isSelected = false) {
     div.appendChild(span);
 
     if (!isSelected) {
+        // Listener for adding to selection (only for menu items)
         div.addEventListener('click', () => handleSwatchClick(swatch, div));
     } else {
+        // Add remove button for selected items
         const removeBtn = document.createElement('button');
         removeBtn.classList.add('remove-swatch-btn');
-        removeBtn.innerHTML = '&times;';
-        removeBtn.title = '删除';
+        removeBtn.innerHTML = '&times;'; // 'X' symbol
+        removeBtn.title = '删除'; // Tooltip
+        // Event listener added via delegation later
         div.appendChild(removeBtn);
     }
-
-    // 使用 IntersectionObserver 进行懒加载
-    const observer = new IntersectionObserver((entries, observer) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                img.src = img.dataset.src;
-                observer.unobserve(img);
-            }
-        });
-    });
-    observer.observe(img);
 
     return div;
 }
