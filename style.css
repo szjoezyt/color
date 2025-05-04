@@ -1,105 +1,353 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+:root {
+    --bg-color: #f0f2f5;
+    --sidebar-bg: #ffffff;
+    --selection-bg: #ffffff;
+    --text-color: #333;
+    --primary-accent: #007bff;
+    --secondary-accent: #6c757d;
+    --border-color: #e0e0e0;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    --transition-speed: 0.4s;
+}
+
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-family: 'Noto Sans SC', sans-serif;
     margin: 0;
-    padding: 0;
-    background-color: #f4f4f4; /* Default background */
-    color: #333;
-    transition: background-color 0.5s ease; /* Smooth background transition */
-    text-align: center;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    transition: background-color var(--transition-speed) ease;
+    overflow-x: hidden; /* Prevent horizontal scroll */
 }
 
-header {
-    background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white header */
-    padding: 1em 0;
-    margin-bottom: 2em;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+.container {
+    display: flex;
+    min-height: 100vh;
 }
 
-header h1 {
-    margin: 0;
-    color: #0056b3; /* A nice blue for the title */
+.sidebar {
+    width: 280px;
+    background-color: var(--sidebar-bg);
+    padding: 20px;
+    box-shadow: 2px 0 5px var(--shadow-color);
+    overflow-y: auto;
+    height: 100vh; /* Make sidebar scrollable independently */
+    position: sticky; /* Keep sidebar visible */
+    top: 0;
+    display: flex; /* Use flexbox for layout */
+    flex-direction: column; /* Stack children vertically */
+    flex-shrink: 0; /* Prevent sidebar from shrinking */
 }
 
-main {
-    padding: 0 1em;
+.sidebar h2 {
+    margin-top: 0;
+    color: var(--primary-accent);
+    font-weight: 400;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+    flex-shrink: 0; /* Prevent shrinking */
 }
 
-.selected-color-info {
-    background-color: #fff;
-    padding: 1em;
-    margin-bottom: 2em;
-    border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    display: inline-block; /* Fit content width */
-    font-size: 1.1em;
-    font-weight: bold;
+/* New styles for sidebar controls */
+.sidebar-controls {
+    display: flex;
+    justify-content: space-between;
+    margin: 10px 0;
+    flex-shrink: 0; /* Prevent shrinking */
 }
 
-#selected-color-name, #selected-color-hex {
-    display: inline-block; /* Keep them on the same line */
-    padding: 0.2em 0.5em;
+.sidebar-controls button {
+    padding: 5px 10px;
+    font-size: 0.85em;
+    background-color: var(--primary-accent);
+    color: white;
+    border: none;
     border-radius: 4px;
-}
-
-#selected-color-name {
-    background-color: #eee;
-}
-
-#selected-color-hex {
-    font-family: 'Courier New', Courier, monospace;
-    background-color: #ddd;
-}
-
-.color-palette {
-    display: grid;
-    grid-template-columns: repeat(4, 120px); /* Fixed 4 columns, 120px wide each */
-    justify-content: center; /* Center the grid items horizontally */
-    gap: 1em; /* Reduced spacing between swatches */
-    margin: 2em auto; /* Center the palette, added more top margin */
-    padding: 1em;
-}
-
-.color-swatch {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%; /* Circular swatches */
     cursor: pointer;
-    border: 3px solid #fff; /* White border */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-    margin: 0 auto; /* Center swatch in grid cell */
-    position: relative; /* For potential pseudo-elements */
-    overflow: hidden; /* Hide potential overflow */
+    transition: background-color 0.2s ease;
+    flex-grow: 1; /* Allow the single button to take full width */
+    margin: 0 5px; /* Add some horizontal margin */
 }
 
-.color-swatch:hover {
-    transform: scale(1.1); /* Grow effect on hover */
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+.sidebar-controls button:hover {
+    background-color: #0056b3;
 }
 
-.color-swatch.selected {
-    border-color: #ffd700; /* Gold border for selected */
-    transform: scale(1.15); /* Slightly larger when selected */
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+#category-menu {
+    flex-grow: 1; /* Allow menu to take remaining space */
+    overflow-y: auto; /* Make the menu scrollable if needed */
+    margin-right: -20px; /* Compensate for padding to allow scrollbar within */
+    padding-right: 15px; /* Add padding back for content */
 }
 
-/* Style for white swatch to be visible */
-.color-swatch[style*="background-color: rgb(255, 255, 255)"],
-.color-swatch[style*="background-color: #FFFFFF"],
-.color-swatch[style*="background-color: #ffffff"] {
-    border: 3px solid #ccc; /* Grey border for white */
-}
-.color-swatch.selected[style*="background-color: rgb(255, 255, 255)"],
-.color-swatch.selected[style*="background-color: #FFFFFF"],
-.color-swatch.selected[style*="background-color: #ffffff"] {
-    border-color: #ffd700; /* Ensure selected border is visible */
+#category-menu details {
+    margin-bottom: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    overflow: hidden; /* Clip content inside border */
 }
 
-
-footer {
-    margin-top: 3em;
-    padding: 1em 0;
-    background-color: rgba(51, 51, 51, 0.9); /* Dark footer */
-    color: #f4f4f4;
-    font-size: 0.9em;
+#category-menu summary {
+    padding: 10px 15px;
+    cursor: pointer;
+    background-color: #f9f9f9;
+    font-weight: 400;
+    list-style: none; /* Remove default marker */
+    display: flex;
+    align-items: center;
+    transition: background-color 0.2s ease;
+    position: relative; /* For indicator positioning */
 }
+
+/* Style for the color indicator */
+.category-color-indicator {
+    display: inline-block;
+    width: 20px; /* Increased size */
+    height: 20px; /* Increased size */
+    border-radius: 4px; /* Slightly larger radius */
+    margin-right: 10px; /* Adjusted margin */
+    border: 1px solid rgba(0,0,0,0.1);
+    vertical-align: middle; /* Align with text */
+    flex-shrink: 0; /* Prevent indicator from shrinking */
+}
+
+/* Add a span for the category name to push the arrow to the right */
+.category-name {
+    flex-grow: 1; /* Take available space */
+    margin-left: 5px; /* Space between indicator and name */
+}
+
+#category-menu summary:hover {
+    background-color: #efefef;
+}
+
+#category-menu summary::after {
+    content: '▶'; /* Collapsed indicator */
+    font-size: 0.8em;
+    transition: transform 0.3s ease;
+}
+
+#category-menu details[open] summary::after {
+    transform: rotate(90deg); /* Expanded indicator */
+}
+
+#category-menu details[open] summary {
+     border-bottom: 1px solid var(--border-color);
+}
+
+.swatch-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); /* Responsive grid for menu items */
+    gap: 15px; /* Increased gap */
+    padding: 15px;
+}
+
+.swatch-list.menu {
+   background-color: #fff; /* Background for swatch area within details */
+}
+
+/* Main selection area styling */
+.selection-area {
+    flex-grow: 1; /* Take remaining horizontal space */
+    padding: 20px;
+    overflow-y: auto; /* Allow scrolling if content overflows vertically */
+    height: 100vh; /* Limit height to viewport height */
+    box-sizing: border-box; /* Include padding in height calculation */
+}
+
+.selection-area h2 {
+    margin-top: 0;
+    color: var(--primary-accent);
+    font-weight: 400;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+}
+
+.swatch-item {
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    overflow: hidden;
+    text-align: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    background-color: #fff; /* Ensure background for items */
+    display: flex; /* Use flex for layout */
+    flex-direction: column;
+    height: 110px; /* Fixed height for consistency in menu */
+    position: relative; /* Needed for potential absolute positioning inside */
+}
+
+.swatch-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px var(--shadow-color);
+    z-index: 2; /* Bring slightly forward on hover */
+}
+
+.swatch-item img {
+    width: 100%;
+    height: 75px; /* Fixed image height in menu */
+    object-fit: cover; /* Cover the area */
+    display: block;
+}
+
+.swatch-item span {
+    display: block;
+    padding: 5px;
+    font-size: 0.8em;
+    flex-grow: 1; /* Allow text to take remaining space */
+    display: flex; /* Center text vertically */
+    align-items: center;
+    justify-content: center;
+    background-color: #f9f9f9; /* Slightly different background for text */
+}
+
+/* Styles for selected items area */
+#selected-swatches {
+    min-height: 150px; /* Minimum height */
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    background-color: rgba(255, 255, 255, 0.5); /* Slightly transparent white */
+    display: grid; /* Use grid layout */
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); /* Responsive grid, min 100px wide */
+    gap: 20px; /* Gap between items */
+    align-content: start; /* Align items to the top */
+}
+
+#selected-swatches .swatch-item {
+    cursor: grab; /* Indicate draggable */
+    height: 130px; /* Slightly larger selected items */
+    transition: transform 0.2s ease, box-shadow 0.2s ease; /* Ensure transition is present */
+    position: relative; /* Needed for z-index and remove button */
+}
+
+#selected-swatches .swatch-item:hover {
+    transform: scale(1.05); /* Scale the whole item slightly */
+    z-index: 10; /* Bring hovered item well above others */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+#selected-swatches .swatch-item img {
+     height: 90px; /* Image height within selected items */
+     cursor: zoom-in;
+}
+
+/* Style for the remove button on selected items */
+.remove-swatch-btn {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    width: 18px;
+    height: 18px;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 12px;
+    line-height: 18px; /* Center the 'X' vertically */
+    text-align: center;
+    cursor: pointer;
+    opacity: 0; /* Hidden by default */
+    transition: opacity 0.2s ease, background-color 0.2s ease;
+    z-index: 11; /* Ensure it's above the image */
+}
+
+#selected-swatches .swatch-item:hover .remove-swatch-btn {
+    opacity: 1; /* Show on hover of the parent swatch item */
+}
+
+.remove-swatch-btn:hover {
+    background-color: rgba(255, 0, 0, 0.8); /* Red background on hover */
+}
+
+/* SortableJS dragging styles - Enhanced */
+.sortable-ghost {
+    opacity: 0.6; /* Slightly more visible */
+    background-color: #d1e7ff; /* Brighter blue background */
+    border: 2px dashed var(--primary-accent);
+    border-radius: 4px; /* Match item radius */
+    box-shadow: none; /* Remove shadow from ghost */
+    transform: scale(1.0); /* Ensure ghost is same size */
+}
+
+.sortable-drag {
+    opacity: 0.95; /* Slightly less transparent */
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25); /* Stronger shadow */
+    transform: scale(1.08) rotate(3deg) !important; /* Slightly larger and tilted - !important to override hover */
+    cursor: grabbing !important; /* Change cursor - !important to override */
+    z-index: 999 !important; /* Ensure dragged item is always on top */
+}
+
+/* Placeholder text */
+.placeholder-text {
+    text-align: center;
+    color: var(--secondary-accent);
+    font-size: 1.1em;
+    margin-top: 40px;
+}
+
+/* Hide placeholder when items are present */
+#selected-swatches:not(:empty) + #selection-placeholder {
+    display: none;
+}
+#selected-swatches:empty + #selection-placeholder {
+    display: block;
+}
+
+/* Modal Styles */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1500; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0, 0, 0, 0.85); /* Black w/ opacity */
+    cursor: zoom-out; /* Indicate clicking closes it */
+    justify-content: center;
+    align-items: center;
+    padding: 20px; /* Add some padding */
+    box-sizing: border-box;
+}
+
+#modal-image {
+    display: block;
+    max-width: 90%;
+    max-height: 90%;
+    margin: auto; /* Center image */
+    object-fit: contain;
+    border-radius: 5px;
+    cursor: default; /* Don't show zoom-out on image itself */
+}
+
+.close-modal {
+    position: absolute;
+    top: 20px;
+    right: 35px;
+    color: #f1f1f1;
+    font-size: 40px;
+    font-weight: bold;
+    transition: 0.3s;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.close-modal:hover,
+.close-modal:focus {
+    color: #bbb;
+    text-decoration: none;
+}
+
+/* Add fade-in animation for modal */
+.modal.show {
+     display: flex; /* Use flex for centering */
+     animation: fadeIn 0.3s ease;
+ }
+
+ @keyframes fadeIn {
+     from { opacity: 0; }
+     to { opacity: 1; }
+ }
