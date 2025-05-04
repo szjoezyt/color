@@ -7,9 +7,9 @@ const categories = [
         name: "BZ系列",
         color: "#A0A0A0", // Neutral Grey
         swatches: [
-            { id: "bz01", name: "BZ板材 01", image: "images/BZ-01.jpg" },
-            { id: "bz02", name: "BZ板材 02", image: "images/BZ-02.jpg" },
-            { id: "bz03", name: "BZ板材 03", image: "images/BZ-03.jpg" },
+            { id: "bz01", name: "BZ-01", image: "images/BZ-01.jpg" },
+            { id: "bz02", name: "BZ-02", image: "images/BZ-02.jpg" },
+            { id: "bz03", name: "BZ-03", image: "images/BZ-03.jpg" },
             { id: "bz04", name: "BZ板材 04", image: "images/BZ-04.jpg" },
             { id: "bz05", name: "BZ板材 05", image: "images/BZ-05.jpg" },
             { id: "bz06", name: "BZ板材 06", image: "images/BZ-06.jpg" },
@@ -44,9 +44,9 @@ const categories = [
             { id: "bz46", name: "BZ板材 46", image: "images/BZ-46.jpg" },
             { id: "bz47", name: "BZ板材 47", image: "images/BZ-47.jpg" },
             { id: "bz48", name: "BZ板材 48", image: "images/BZ-48.jpg" },
-            { id: "bz49", name: "BZ板材 49", image: "images/BZ-49.jpg" },
-            { id: "bz50", name: "BZ板材 50", image: "images/BZ-50.jpg" },
-            { id: "bz51", name: "BZ板材 51", image: "images/BZ-51.jpg" }
+            { id: "bz49", name: "BZ-49", image: "images/BZ-49.jpg" },
+            { id: "bz50", name: "BZ-50", image: "images/BZ-50.jpg" },
+            { id: "bz51", name: "BZ-51", image: "images/BZ-51.jpg" }
         ]
     },
     {
@@ -54,22 +54,22 @@ const categories = [
         name: "CBZ系列",
         color: "#B8A99A", // Muted Brown/Beige
         swatches: [
-            { id: "cbz01", name: "CBZ板材 01", image: "images/CBZ01.jpg" },
-            { id: "cbz015", name: "CBZ板材 015", image: "images/CBZ015.jpg" },
-            { id: "cbz02", name: "CBZ板材 02", image: "images/CBZ02.jpg" },
-            { id: "cbz03", name: "CBZ板材 03", image: "images/CBZ03.jpg" },
-            { id: "cbz04", name: "CBZ板材 04", image: "images/CBZ04.jpg" },
-            { id: "cbz05", name: "CBZ板材 05", image: "images/CBZ05.jpg" },
-            { id: "cbz06", name: "CBZ板材 06", image: "images/CBZ06.jpg" },
-            { id: "cbz07", name: "CBZ板材 07", image: "images/CBZ07.jpg" },
-            { id: "cbz08", name: "CBZ板材 08", image: "images/CBZ08.jpg" },
-            { id: "cbz10", name: "CBZ板材 10", image: "images/CBZ10.jpg" },
-            { id: "cbz11", name: "CBZ板材 11", image: "images/CBZ11.jpg" },
-            { id: "cbz12", name: "CBZ板材 12", image: "images/CBZ12.jpg" },
-            { id: "cbz13", name: "CBZ板材 13", image: "images/CBZ13.jpg" },
-            { id: "cbz14", name: "CBZ板材 14", image: "images/CBZ14.jpg" },
-            { id: "cbz16", name: "CBZ板材 16", image: "images/CBZ16.jpg" },
-            { id: "cbz17", name: "CBZ板材 17", image: "images/CBZ17.jpg" }
+            { id: "cbz01", name: "CBZ01", image: "images/CBZ01.jpg" },
+            { id: "cbz015", name: "CBZ015", image: "images/CBZ15.jpg" },
+            { id: "cbz02", name: "CBZ02", image: "images/CBZ02.jpg" },
+            { id: "cbz03", name: "CBZ03", image: "images/CBZ03.jpg" },
+            { id: "cbz04", name: "CBZ04", image: "images/CBZ04.jpg" },
+            { id: "cbz05", name: "CBZ05", image: "images/CBZ05.jpg" },
+            { id: "cbz06", name: "CBZ06", image: "images/CBZ06.jpg" },
+            { id: "cbz07", name: "CBZ07", image: "images/CBZ07.jpg" },
+            { id: "cbz08", name: "CBZ08", image: "images/CBZ08.jpg" },
+            { id: "cbz10", name: "CBZ10", image: "images/CBZ10.jpg" },
+            { id: "cbz11", name: "CBZ11", image: "images/CBZ11.jpg" },
+            { id: "cbz12", name: "CBZ12", image: "images/CBZ12.jpg" },
+            { id: "cbz13", name: "CBZ13", image: "images/CBZ13.jpg" },
+            { id: "cbz14", name: "CBZ14", image: "images/CBZ14.jpg" },
+            { id: "cbz16", name: "CBZ16", image: "images/CBZ16.jpg" },
+            { id: "cbz17", name: "CBZ17", image: "images/CBZ17.jpg" }
         ]
     },
     {
