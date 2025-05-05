@@ -351,3 +351,29 @@ body {
      from { opacity: 0; }
      to { opacity: 1; }
  }
+/* 手机屏幕样式 */
+@media (max-width: 767px) {
+    .container {
+        flex-direction: column; /* 垂直排列侧边栏和选择区域 */
+    }
+
+    .sidebar {
+        width: 100%; /* 侧边栏占满宽度 */
+        height: auto; /* 高度自适应 */
+        position: relative; /* 取消粘性定位 */
+    }
+
+    .selection-area {
+        height: auto; /* 选择区域高度自适应 */
+    }
+
+    .swatch-list {
+        grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); /* 减小色块网格的最小宽度 */
+        gap: 10px; /* 减小间隙 */
+    }
+
+    #selected-swatches {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); /* 减小已选色块网格的最小宽度 */
+        gap: 15px; /* 减小间隙 */
+    }
+}
