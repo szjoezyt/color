@@ -181,7 +181,6 @@ const closeModalBtn = document.querySelector('.close-modal');
 
 // --- State ---
 let nextInstanceId = 0; // Counter for unique instance IDs
-let touchStartTime = 0; // 新增：记录触摸开始时间
 
 // --- Functions ---
 // Function to create a unique instance ID
@@ -191,42 +190,193 @@ function generateInstanceId() {
 
 // Function to create a swatch element
 function createSwatchElement(swatch, isSelected = false) {
-    // 原有的创建色块元素的代码保持不变
+    const div = document.createElement('div');
+    div.classList.add('swatch-item');
+    div.dataset.id = swatch.id; // Original swatch ID
+    div.dataset.image = swatch.image; // Store small image path for initial display
+
+    if (isSelected) {
+        div.dataset.instanceId = generateInstanceId(); // Unique ID for this specific instance
+        // Store big image path
+        const bigImagePath = swatch.image.replace('images', 'imagesbig');
+        div.dataset.bigImage = bigImagePath;
+    }
+
+    const img = document.createElement('img');
+    img.src = swatch.image;
+    img.alt = swatch.name;
+    img.loading = 'lazy'; // Lazy load images
+
+    const span = document.createElement('span');
+    span.textContent = swatch.name;
+
+    div.appendChild(img);
+    div.appendChild(span);
+
+    if (!isSelected) {
+        // Listener for adding to selection (only for menu items)
+        div.addEventListener('click', () => handleSwatchClick(swatch, div));
+    } else {
+        // Add remove button for selected items
+        const removeBtn = document.createElement('button');
+        removeBtn.classList.add('remove-swatch-btn');
+        removeBtn.innerHTML = '&times;'; // 'X' symbol
+        removeBtn.title = '删除'; // Tooltip
+        // Event listener added via delegation later
+        div.appendChild(removeBtn);
+    }
+
+    return div;
 }
 
 // Function to populate the category menu
 function populateMenu() {
-    // 原有的填充菜单的代码保持不变
+    categoryMenu.innerHTML = ''; // Clear existing menu items if any
+    const fragment = document.createDocumentFragment();
+    
+    categories.forEach(category => {
+        const details = document.createElement('details');
+        details.dataset.categoryId = category.id; // Add identifier
+        const summary = document.createElement('summary');
+
+        // Add color indicator
+        const colorIndicator = document.createElement('span');
+        colorIndicator.classList.add('category-color-indicator');
+        colorIndicator.style.backgroundColor = category.color;
+        summary.appendChild(colorIndicator);
+
+        // Add category name wrapped in a span for flex layout
+        const nameSpan = document.createElement('span');
+        nameSpan.classList.add('category-name'); // Add class for styling
+        nameSpan.textContent = category.name;
+        summary.appendChild(nameSpan);
+
+        details.appendChild(summary);
+
+        const swatchList = document.createElement('div');
+        swatchList.classList.add('swatch-list', 'menu');
+
+        category.swatches.forEach(swatch => {
+            // Add categoryId to swatch object for later reference during click
+            const swatchWithCategory = { ...swatch, categoryId: category.id };
+            const swatchElement = createSwatchElement(swatchWithCategory, false);
+            swatchList.appendChild(swatchElement);
+        });
+
+        details.appendChild(swatchList);
+        categoryMenu.appendChild(details);
+    });
 }
 
 // Function to handle clicking a swatch in the menu
 function handleSwatchClick(swatch, originalElement) {
-    // 原有的处理色块点击的代码保持不变
+    const category = categories.find(cat => cat.id === swatch.categoryId);
+    if (!category) return;
+
+    // 1. Change Background Color smoothly
+    body.style.backgroundColor = category.color; // CSS handles transition
+
+    // 2. Prepare for animation
+    const swatchToAdd = { ...swatch }; // Clone swatch data
+    animateSwatchToSelection(swatchToAdd, originalElement);
 }
 
 // Function to animate the swatch to the selection area
 function animateSwatchToSelection(swatch, originalElement) {
-    // 原有的动画效果的代码保持不变
+    const startRect = originalElement.getBoundingClientRect();
+    const endRectTarget = selectedSwatchesContainer.getBoundingClientRect();
+
+    // Simplified Target Calculation: Aim for the top-left of the container + padding
+    // The grid layout will place it correctly once added.
+    const containerStyle = getComputedStyle(selectedSwatchesContainer);
+    const containerPaddingTop = parseFloat(containerStyle.paddingTop);
+    const containerPaddingLeft = parseFloat(containerStyle.paddingLeft);
+
+    // Use a fixed target size similar to selected items for animation consistency
+    const targetWidth = 100;
+    const targetHeight = 130;
+
+    // Adjust target slightly inwards from the container padding edge
+    const targetX = endRectTarget.left + containerPaddingLeft + 10; // Add small offset
+    const targetY = endRectTarget.top + containerPaddingTop + 10; // Add small offset
+
+
+    // Configure the clone for animation
+    animationClone.innerHTML = originalElement.innerHTML; // Copy content
+    animationClone.style.width = `${startRect.width}px`;
+    animationClone.style.height = `${startRect.height}px`;
+    animationClone.style.left = `${startRect.left}px`;
+    animationClone.style.top = `${startRect.top}px`;
+    animationClone.style.opacity = '1';
+    animationClone.style.transition = 'none';
+    animationClone.style.pointerEvents = 'none';
+    animationClone.style.zIndex = '1000';
+
+    animationClone.offsetHeight; // Force reflow
+
+    const transitionSpeedValue = getComputedStyle(document.documentElement).getPropertyValue('--transition-speed').trim();
+    animationClone.style.transition = `left ${transitionSpeedValue} ease-in-out, top ${transitionSpeedValue} ease-in-out, width ${transitionSpeedValue} ease-in-out, height ${transitionSpeedValue} ease-in-out, opacity calc(${transitionSpeedValue} * 0.8) ease-in-out ${transitionSpeedValue}*0.1`;
+    animationClone.style.left = `${targetX}px`;
+    animationClone.style.top = `${targetY}px`;
+    animationClone.style.width = `${targetWidth}px`;
+    animationClone.style.height = `${targetHeight}px`;
+    animationClone.style.opacity = '0';
+
+    // 3. Add the actual item to the selection area *after* a short delay
+    setTimeout(() => {
+        const selectedSwatchElement = createSwatchElement(swatch, true); // Create selected version with unique instance ID
+        selectedSwatchesContainer.appendChild(selectedSwatchElement);
+        updatePlaceholderVisibility();
+        const animDuration = parseFloat(transitionSpeedValue.replace('s', '')) * 1000 || 400;
+        setTimeout(() => {
+           animationClone.style.opacity = '0';
+           animationClone.style.transition = 'none';
+        }, animDuration);
+    }, 100); // Slightly increased delay to let animation progress more
 }
 
 // Function to update placeholder visibility
 function updatePlaceholderVisibility() {
-    // 原有的更新占位符可见性的代码保持不变
+    if (selectedSwatchesContainer.children.length > 0) {
+        selectionPlaceholder.style.display = 'none';
+    } else {
+        selectionPlaceholder.style.display = 'block';
+    }
 }
 
 // Function to Toggle All Categories (Replaces Expand/Collapse)
 function toggleAllCategories() {
-    // 原有的切换所有分类的代码保持不变
+    const allDetails = categoryMenu.querySelectorAll('details');
+    if (allDetails.length === 0) return;
+
+    // Check the state of the first details element to decide action
+    const isFirstOpen = allDetails[0].open;
+
+    // If the first is open, assume we want to collapse all. Otherwise, expand all.
+    // This handles mixed states by collapsing first.
+    if (isFirstOpen) {
+        allDetails.forEach(details => details.open = false);
+    } else {
+        allDetails.forEach(details => details.open = true);
+    }
 }
 
 // Function to open the image modal
 function openImageModal(swatchElement) {
-    // 原有的打开图片模态框的代码保持不变
+    const bigImageSrc = swatchElement.dataset.bigImage;
+    if (bigImageSrc) {
+        modalImage.src = bigImageSrc;
+        imageModal.classList.add('show'); // Use class to trigger display and animation
+    }
 }
 
 // Function to close the image modal
 function closeImageModal() {
-    // 原有的关闭图片模态框的代码保持不变
+    imageModal.classList.remove('show');
+    // Optional: Clear src after fade out for slightly better performance
+    setTimeout(() => {
+        modalImage.src = "";
+    }, 300); // Match CSS animation duration
 }
 
 // --- Event Listeners ---
@@ -236,45 +386,9 @@ toggleAllBtn.addEventListener('click', toggleAllCategories);
 // Modal close listeners
 closeModalBtn.addEventListener('click', closeImageModal);
 imageModal.addEventListener('click', (event) => {
-    // 原有的模态框关闭事件处理代码保持不变
-});
-
-// 新增：触摸开始事件监听器
-selectedSwatchesContainer.addEventListener('touchstart', (event) => {
-    touchStartTime = Date.now();
-});
-
-// 新增：触摸结束事件监听器
-selectedSwatchesContainer.addEventListener('touchend', (event) => {
-    const touchDuration = Date.now() - touchStartTime;
-    if (touchDuration < 300) { // 如果触摸持续时间小于 300 毫秒，认为是点击事件
-        const target = event.changedTouches[0].target;
-
-        // Check if the remove button was clicked
-        if (target.classList.contains('remove-swatch-btn')) {
-            event.stopPropagation(); // Prevent modal from opening
-            const swatchItemToRemove = target.closest('.swatch-item');
-            if (swatchItemToRemove) {
-                // Optional: Add a fade-out effect before removing
-                swatchItemToRemove.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-                swatchItemToRemove.style.opacity = '0';
-                swatchItemToRemove.style.transform = 'scale(0.8)';
-                setTimeout(() => {
-                    swatchItemToRemove.remove();
-                    updatePlaceholderVisibility(); // Update placeholder after removal
-                    // If SortableJS instance needs update (e.g., re-calculating indices), do it here
-                }, 300); // Delay removal until after animation
-            }
-            return; // Stop further processing for this click
-        }
-
-        // Check if an image within a selected swatch was clicked for zoom
-        const clickedImage = target.closest('img');
-        const swatchItem = target.closest('.swatch-item'); // Ensure click is within a swatch item
-
-        if (clickedImage && swatchItem) {
-            openImageModal(swatchItem); // Pass the swatch item to openImageModal
-        }
+    // Close if clicked on the background (modal itself), not the image
+    if (event.target === imageModal) {
+        closeImageModal();
     }
 });
 
