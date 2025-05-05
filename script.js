@@ -475,4 +475,29 @@ new Sortable(selectedSwatchesContainer, {
     swapThreshold: 0.65, // Threshold for swapping items
     filter: '.remove-swatch-btn', // Ignore clicks on remove button for starting drag
     preventOnFilter: true // Prevent default action (like drag start) on filtered elements
+chosenClass: 'sortable-chosen', // 添加 chosenClass
+    onMove: function (evt) {
+        // 在拖动过程中触发，优化占位元素的视觉效果
+        const related = evt.related;
+        if (related) {
+            related.style.transition = 'transform 0.2s ease';
+            if (evt.to === evt.from) {
+                if (evt.oldIndex < evt.newIndex) {
+                    related.style.transform = 'translateX(100%)';
+                } else {
+                    related.style.transform = 'translateX(-100%)';
+                }
+            }
+        }
+    },
+    onEnd: function (evt) {
+        // 拖动结束后，恢复占位元素的样式
+        const related = evt.related;
+        if (related) {
+            related.style.transition = '';
+            related.style.transform = '';
+        }
+    }
+
+    
 });
