@@ -181,6 +181,7 @@ const closeModalBtn = document.querySelector('.close-modal');
 
 // --- State ---
 let nextInstanceId = 0; // Counter for unique instance IDs
+let touchStartTime = 0; // 新增：记录触摸开始时间
 
 // --- Functions ---
 // Function to create a unique instance ID
@@ -392,6 +393,43 @@ imageModal.addEventListener('click', (event) => {
     }
 });
 
+// 新增：触摸开始事件监听器
+selectedSwatchesContainer.addEventListener('touchstart', (event) => {
+    touchStartTime = Date.now();
+});
+// 新增：触摸结束事件监听器
+selectedSwatchesContainer.addEventListener('touchend', (event) => {
+    const touchDuration = Date.now() - touchStartTime;
+    if (touchDuration < 300) { // 如果触摸持续时间小于 300 毫秒，认为是点击事件
+        const target = event.changedTouches[0].target;
+        // Check if the remove button was clicked
+        if (target.classList.contains('remove-swatch-btn')) {
+            event.stopPropagation(); // Prevent modal from opening
+            const swatchItemToRemove = target.closest('.swatch-item');
+            if (swatchItemToRemove) {
+                // Optional: Add a fade-out effect before removing
+                swatchItemToRemove.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                swatchItemToRemove.style.opacity = '0';
+                swatchItemToRemove.style.transform = 'scale(0.8)';
+                setTimeout(() => {
+                    swatchItemToRemove.remove();
+                    updatePlaceholderVisibility(); // Update placeholder after removal
+                    // If SortableJS instance needs update (e.g., re-calculating indices), do it here
+                }, 300); // Delay removal until after animation
+            }
+            return; // Stop further processing for this click
+        }
+
+        // Check if an image within a selected swatch was clicked for zoom
+        const clickedImage = target.closest('img');
+        const swatchItem = target.closest('.swatch-item'); // Ensure click is within a swatch item
+
+        if (clickedImage && swatchItem) {
+            openImageModal(swatchItem); // Pass the swatch item to openImageModal
+        }
+    }
+});
+    
 // Event delegation for selectedSwatchesContainer (handles image zoom and remove button)
 selectedSwatchesContainer.addEventListener('click', (event) => {
     const target = event.target;
