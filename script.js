@@ -4,7 +4,7 @@ import Sortable from 'sortablejs';
 const categories = [
     {
         id: "bz",
-        name: "BZ-standard color9*1220*2440mm",
+        name: "BZ-standard color<br/>9*1220*2440mm",
         color: "#A0A0A0", // Neutral Grey
         swatches: [
             { id: "bz01", name: "BZ-01", image: "images/BZ-01.jpg" },
