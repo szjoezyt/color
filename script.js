@@ -51,7 +51,7 @@ const categories = [
     },
     {
         id: "cbz",
-        name: "CBZ-pure color8*1220*2440mm",
+        name: "CBZ-pure color\n8*1220*2440mm",
         color: "#B8A99A", // Muted Brown/Beige
         swatches: [
             { id: "cbz01", name: "CBZ01", image: "images/CBZ01.jpg" },
@@ -74,7 +74,7 @@ const categories = [
     },
     {
         id: "s19",
-        name: "19-color12*1225*2800mm",
+        name: "19-color\n12*1225*2800mm",
         color: "#C5D5E2", // Light Blue-Grey
         swatches: [
             { id: "s1901", name: "1901", image: "images/1901.jpg" },
@@ -101,7 +101,7 @@ const categories = [
     },
     {
         id: "s21",
-        name: "21-color12*1225*2800mm",
+        name: "21-color\n12*1225*2800mm",
         color: "#D1C4B0", // Light Tan
         swatches: [
             { id: "s2101", name: "2101", image: "images/2101.jpg" },
@@ -139,7 +139,7 @@ const categories = [
     },
     {
         id: "s24",
-        name: "24-color12*1225*2800mm",
+        name: "24-color\n12*1225*2800mm",
         color: "#8A9A8F", // Muted Green-Grey
         swatches: [
             { id: "s2401", name: "2401", image: "images/2401.png" },
