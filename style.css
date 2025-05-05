@@ -376,4 +376,22 @@ body {
         grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); /* 减小已选色块网格的最小宽度 */
         gap: 15px; /* 减小间隙 */
     }
+    /* SortableJS chosen item style */
+.sortable-chosen {
+    opacity: 0.8;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+    transform: scale(1.05);
+    z-index: 999;
+}
+
+/* SortableJS dragging styles - Enhanced */
+.sortable-ghost {
+    opacity: 0.6; /* Slightly more visible */
+    background-color: #d1e7ff; /* Brighter blue background */
+    border: 2px dashed var(--primary-accent);
+    border-radius: 4px; /* Match item radius */
+    box-shadow: none; /* Remove shadow from ghost */
+    transform: scale(1.0); /* Ensure ghost is same size */
+    transition: transform 0.2s ease; /* 添加过渡效果 */
+}
 }
