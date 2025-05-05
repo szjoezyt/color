@@ -11,6 +11,33 @@
         }
       }
     </script>
+    <style>
+        /* Add this style for the footer links */
+        .footer-links {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255,255,255,0.9);
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            border-top: 1px solid #eee;
+            z-index: 100;
+        }
+        .footer-links a {
+            color: #333;
+            text-decoration: none;
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+        .footer-links a:hover {
+            background: #f0f0f0;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -41,7 +68,8 @@
         <span class="close-modal" title="关闭">&times;</span>
         <img id="modal-image" src="" alt="Enlarged Swatch">
     </div>
-<!-- Footer Links -->
+
+    <!-- Footer Links -->
     <div class="footer-links">
         <a href="https://www.kdocs.cn/l/cqhXJKgna4Ih" target="_blank">FAQ 常见问题</a>
         <a href="https://www.sujoeisme.com/contact" target="_blank">CONTACT ME 联系我</a>
