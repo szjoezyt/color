@@ -207,6 +207,12 @@ function createSwatchElement(swatch, isSelected = false) {
     img.alt = swatch.name;
     img.loading = 'lazy'; // Lazy load images
 
+    // 添加 srcset 属性
+    const smallImage = swatch.image;
+    const mediumImage = swatch.image.replace('images', 'images-medium'); // 假设存在中等分辨率图片
+    const largeImage = swatch.image.replace('images', 'imagesbig'); // 假设存在大分辨率图片
+    img.srcset = `${smallImage} 400w, ${mediumImage} 800w, ${largeImage} 1200w`;
+
     const span = document.createElement('span');
     span.textContent = swatch.name;
 
