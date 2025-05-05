@@ -474,7 +474,7 @@ new Sortable(selectedSwatchesContainer, {
     fallbackOnBody: true, // Attach clone to body to avoid clipping issues
     swapThreshold: 0.65, // Threshold for swapping items
     filter: '.remove-swatch-btn', // Ignore clicks on remove button for starting drag
-    preventOnFilter: true， // Prevent default action (like drag start) on filtered elements
+    preventOnFilter: true, // Prevent default action (like drag start) on filtered elements
     chosenClass: 'sortable-chosen', // 添加 chosenClass
     onMove: function (evt) {
         // 在拖动过程中触发，优化占位元素的视觉效果
