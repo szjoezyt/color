@@ -201,6 +201,13 @@ function createSwatchElement(swatch, isSelected = false) {
         // Store big image path
         const bigImagePath = swatch.image.replace('images', 'imagesbig');
         div.dataset.bigImage = bigImagePath;
+        div.dataset.count = '1'; // Add initial count data attribute
+
+        // Add count display element
+        const countSpan = document.createElement('span');
+        countSpan.classList.add('swatch-count');
+        countSpan.textContent = 'x1';
+        div.appendChild(countSpan);
     }
 
     const img = document.createElement('img');
@@ -269,17 +276,47 @@ function populateMenu() {
     });
 }
 
-// Function to handle clicking a swatch in the menu
+// Function to handle swatch click (from menu)
 function handleSwatchClick(swatch, originalElement) {
-    const category = categories.find(cat => cat.id === swatch.categoryId);
-    if (!category) return;
+    // Check if the swatch is already in the selected area
+    const existingSwatch = selectedSwatchesContainer.querySelector(`[data-id="${swatch.id}"]`);
 
-    // 1. Change Background Color smoothly
-    body.style.backgroundColor = category.color; // CSS handles transition
+    if (existingSwatch) {
+        // Swatch already exists, increment count
+        let currentCount = parseInt(existingSwatch.dataset.count || '1', 10);
+        currentCount++;
+        existingSwatch.dataset.count = currentCount;
 
-    // 2. Prepare for animation
-    const swatchToAdd = { ...swatch }; // Clone swatch data
-    animateSwatchToSelection(swatchToAdd, originalElement);
+        const countSpan = existingSwatch.querySelector('.swatch-count');
+        if (countSpan) {
+            countSpan.textContent = `x${currentCount}`;
+        } else {
+             // Should not happen if createSwatchElement is used, but as a fallback
+             const newCountSpan = document.createElement('span');
+             newCountSpan.classList.add('swatch-count');
+             newCountSpan.textContent = `x${currentCount}`;
+             existingSwatch.appendChild(newCountSpan);
+        }
+         // Optional: Add a visual feedback (e.g., pulse animation)
+         existingSwatch.classList.add('pulse');
+         setTimeout(() => {
+             existingSwatch.classList.remove('pulse');
+         }, 300);
+
+
+
+    } else {
+        // Swatch does not exist, add it
+        const category = categories.find(cat => cat.id === swatch.categoryId);
+        if (!category) return;
+
+        // 1. Change Background Color smoothly
+        body.style.backgroundColor = category.color; // CSS handles transition
+
+        // 2. Prepare for animation
+        const swatchToAdd = { ...swatch, categoryId: category.id }; // Clone swatch data and add categoryId
+        animateSwatchToSelection(swatchToAdd, originalElement);
+    }
 }
 
 // Function to animate the swatch to the selection area
@@ -437,17 +474,36 @@ selectedSwatchesContainer.addEventListener('click', (event) => {
     // Check if the remove button was clicked
     if (target.classList.contains('remove-swatch-btn')) {
         event.stopPropagation(); // Prevent modal from opening
-        const swatchItemToRemove = target.closest('.swatch-item');
-        if (swatchItemToRemove) {
-            // Optional: Add a fade-out effect before removing
-            swatchItemToRemove.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-            swatchItemToRemove.style.opacity = '0';
-            swatchItemToRemove.style.transform = 'scale(0.8)';
-            setTimeout(() => {
-                swatchItemToRemove.remove();
-                updatePlaceholderVisibility(); // Update placeholder after removal
-                // If SortableJS instance needs update (e.g., re-calculating indices), do it here
-            }, 300); // Delay removal until after animation
+        const swatchItemToModify = target.closest('.swatch-item');
+        if (swatchItemToModify) {
+            let currentCount = parseInt(swatchItemToModify.dataset.count || '1', 10);
+
+            if (currentCount > 1) {
+                // Decrement count
+                currentCount--;
+                swatchItemToModify.dataset.count = currentCount;
+                const countSpan = swatchItemToModify.querySelector('.swatch-count');
+                if (countSpan) {
+                    countSpan.textContent = `x${currentCount}`;
+                }
+                 // Optional: Add a visual feedback
+                 swatchItemToModify.classList.add('shrink');
+                 setTimeout(() => {
+                     swatchItemToModify.classList.remove('shrink');
+                 }, 300);
+
+            } else {
+                // Count is 1 or less, remove the element
+                 // Optional: Add a fade-out effect before removing
+                swatchItemToModify.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                swatchItemToModify.style.opacity = '0';
+                swatchItemToModify.style.transform = 'scale(0.8)';
+                setTimeout(() => {
+                    swatchItemToModify.remove();
+                    updatePlaceholderVisibility(); // Update placeholder after removal
+                    // If SortableJS instance needs update (e.g., re-calculating indices), do it here
+                }, 300); // Delay removal until after animation
+            }
         }
         return; // Stop further processing for this click
     }
