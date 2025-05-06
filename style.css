@@ -272,7 +272,7 @@ body {
     bottom: 3px;
     right: 3px;
     background-color: rgba(0, 0, 0, 0.6);
-    color: white;
+    color: #333;
     font-size: 0.7em; /* Smaller font size */
     padding: 2px 5px;
     border-radius: 3px;
