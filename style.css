@@ -248,13 +248,14 @@ body {
     color: white;
     border: none;
     border-radius: 50%;
-    font-size: 12px;
-    line-height: 18px; /* Center the 'X' vertically */
-    text-align: center;
     cursor: pointer;
-    opacity: 0; /* Hidden by default */
-    transition: opacity 0.2s ease, background-color 0.2s ease;
-    z-index: 11; /* Ensure it's above the image */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px; /* Smaller font size */
+    line-height: 1;
+    z-index: 5; /* Above the image */
+    transition: background-color 0.2s ease;
 }
 
 #selected-swatches .swatch-item:hover .remove-swatch-btn {
@@ -263,6 +264,23 @@ body {
 
 .remove-swatch-btn:hover {
     background-color: rgba(255, 0, 0, 0.8); /* Red background on hover */
+}
+
+/* Style for the count display on selected items */
+.swatch-count {
+    position: absolute;
+    bottom: 3px;
+    right: 3px;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: white;
+    font-size: 0.7em; /* Smaller font size */
+    padding: 2px 5px;
+    border-radius: 3px;
+    z-index: 5; /* Above the image */
+    min-width: 15px; /* Ensure minimum width for centering */
+    text-align: center;
+    line-height: 1;
+    pointer-events: none; /* Don't interfere with image clicks */
 }
 
 /* SortableJS dragging styles - Enhanced */
