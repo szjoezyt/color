@@ -414,8 +414,42 @@ function closeImageModal() {
     // Optional: Clear src after fade out for slightly better performance
     setTimeout(() => {
         modalImage.src = "";
+         // Reset image scale and position when modal closes
+        modalImage.style.transform = 'scale(1) translate(0, 0)';
+        modalImage.style.transformOrigin = 'center center';       
     }, 300); // Match CSS animation duration
 }
+
+// Add mouse wheel zoom functionality to modal image
+modalImage.addEventListener('wheel', (event) => {
+    event.preventDefault(); // Prevent default scroll behavior
+
+    // Only zoom if modal is open
+    if (!imageModal.classList.contains('show')) {
+        return;
+    }
+
+    const delta = Math.sign(event.deltaY); // -1 for scroll up (zoom in), 1 for scroll down (zoom out)
+    const currentScale = parseFloat(modalImage.style.transform.replace('scale(', '').split(')')[0]) || 1;
+    let newScale = currentScale;
+
+    const zoomStep = 0.1; // How much to zoom per step
+    const maxScale = 5; // Maximum zoom level
+    const minScale = 0.5; // Minimum zoom level
+
+    if (delta < 0) {
+        // Zoom in
+        newScale = Math.min(maxScale, currentScale + zoomStep);
+    } else {
+        // Zoom out
+        newScale = Math.max(minScale, currentScale - zoomStep);
+    }
+
+    // Optional: Zoom towards mouse cursor (more complex)
+    // For simplicity, let's just zoom from the center for now
+    modalImage.style.transformOrigin = 'center center';
+    modalImage.style.transform = `scale(${newScale})`;
+});
 
 // --- Event Listeners ---
 // Sidebar controls
