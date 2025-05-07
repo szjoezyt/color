@@ -215,6 +215,7 @@ function createSwatchElement(swatch, isSelected = false) {
     img.loading = 'lazy'; // Lazy load images
 
     const span = document.createElement('span');
+    span.classList.add('swatch-name'); // 添加类名以便于识别
     span.textContent = swatch.name;
 
     div.appendChild(img);
@@ -465,7 +466,9 @@ async function exportToPdf() {
     // 收集所有色板信息并加载图片
     for (let i = 0; i < selectedSwatches.length; i++) {
         const swatchElement = selectedSwatches[i];
-        const imageName = swatchElement.querySelector('span').textContent;
+        // 使用添加的类名来获取名称span
+        const nameSpan = swatchElement.querySelector('.swatch-name');
+        const imageName = nameSpan ? nameSpan.textContent : swatchElement.dataset.id || 'Unknown';
         const imageSrc = swatchElement.dataset.image;
         const quantity = parseInt(swatchElement.dataset.count || '1', 10);
 
@@ -564,7 +567,7 @@ async function exportToPdf() {
         // 添加名称和数量 - 确保名称清晰显示
         doc.setFontSize(9);  // 使用小一些的字体以确保适合宽度
         doc.text(item.name, x + imageWidth / 2, y + imageHeight + 5, { align: 'center' });
-        doc.text(`x${item.quantity}`, x + imageWidth / 2, y + imageHeight + 9, { align: 'center' });
+        doc.text(`x${item.quantity}`, x + imageWidth / 2, y + imageHeight + 10, { align: 'center' });
         
         x += imageWidth + itemSpacing;
     });
