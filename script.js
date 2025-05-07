@@ -1,5 +1,5 @@
 import Sortable from 'sortablejs';
-import { jsPDF } from 'jspdf';
+// import { jsPDF } from 'jspdf'; // Commented out: Reverting to window.jspdf access
 
 // --- Data Structure ---
 const categories = [
@@ -594,13 +594,15 @@ new Sortable(selectedSwatchesContainer, {
 // Function to generate and export PDF
 async function exportPdf() {
     // Ensure jsPDF is available (assuming it's loaded via script tag in HTML)
-    // if (typeof window.jspdf === 'undefined' || typeof window.jspdf.jsPDF === 'undefined') {
-    //     console.error('jsPDF library not loaded. Please include it in your index.html.');
-    //     alert('PDF 导出功能所需的库未加载。请检查页面设置。');
-    //     return;
-    // }
+    // Reverted check for window.jspdf
+    if (typeof window.jspdf === 'undefined' || typeof window.jspdf.jsPDF === 'undefined') {
+        console.error('jsPDF library not loaded. Please include it in your index.html.');
+        alert('PDF 导出功能所需的库未加载。请检查页面设置。');
+        return;
+    }
 
-    // const { jsPDF } = window.jspdf; // Removed: Using import instead
+    // Reverted: Using window.jspdf.jsPDF instead of import
+    const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
     const selectedSwatches = selectedSwatchesContainer.querySelectorAll('.swatch-item');
