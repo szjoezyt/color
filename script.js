@@ -1,4 +1,5 @@
 import Sortable from 'sortablejs';
+import { jsPDF } from 'jspdf';
 
 // --- Data Structure ---
 const categories = [
@@ -178,6 +179,7 @@ const toggleAllBtn = document.getElementById('toggle-all-btn');
 const imageModal = document.getElementById('image-modal');
 const modalImage = document.getElementById('modal-image');
 const closeModalBtn = document.querySelector('.close-modal');
+const exportPdfBtn = document.getElementById('export-pdf-btn'); // Added for PDF export
 
 // --- State ---
 let nextInstanceId = 0; // Counter for unique instance IDs
@@ -451,6 +453,179 @@ modalImage.addEventListener('wheel', (event) => {
     modalImage.style.transform = `scale(${newScale})`;
 });
 
+// Function to get Beijing Time as a string
+function getBeijingDateTimeString() {
+    const now = new Date();
+    const beijingTimeOffset = 8 * 60; // Beijing is UTC+8
+    const localTimeOffset = now.getTimezoneOffset(); // in minutes
+    const utc = now.getTime() + (localTimeOffset * 60000);
+    const beijingDate = new Date(utc + (beijingTimeOffset * 60000));
+
+    const year = beijingDate.getFullYear();
+    const month = (beijingDate.getMonth() + 1).toString().padStart(2, '0');
+    const day = beijingDate.getDate().toString().padStart(2, '0');
+    const hours = beijingDate.getHours().toString().padStart(2, '0');
+    const minutes = beijingDate.getMinutes().toString().padStart(2, '0');
+    const seconds = beijingDate.getSeconds().toString().padStart(2, '0');
+
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds} Beijing Time`;
+}
+
+// Function to export selected swatches to PDF
+async function exportToPdf() {
+    const selectedSwatches = Array.from(selectedSwatchesContainer.querySelectorAll('.swatch-item'));
+
+    if (selectedSwatches.length === 0) {
+        alert('Please select at least one swatch to export.');
+        return;
+    }
+
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 10;
+    const imageWidth = 40; // Approximate width for each image
+    const imageHeight = 30; // Approximate height for each image
+    const textHeight = 5;   // Height for text below image
+    const itemSpacing = 5;  // Spacing between items
+    const itemsPerRow = Math.floor((pageWidth - 2 * margin) / (imageWidth + itemSpacing));
+
+    let x = margin;
+    let y = margin;
+    let totalQuantity = 0;
+    const summaryItems = [];
+
+    // Title
+    doc.setFontSize(16);
+    doc.text('Selected Swatches', pageWidth / 2, y, { align: 'center' });
+    y += margin * 2;
+
+    for (let i = 0; i < selectedSwatches.length; i++) {
+        const swatchElement = selectedSwatches[i];
+        const imageName = swatchElement.querySelector('span').textContent;
+        const imageSrc = swatchElement.dataset.image;
+        const quantity = parseInt(swatchElement.dataset.count || '1', 10);
+
+        totalQuantity += quantity;
+        summaryItems.push({ name: imageName, quantity: quantity });
+
+        if (i > 0 && i % itemsPerRow === 0) {
+            x = margin;
+            y += imageHeight + textHeight + itemSpacing;
+            if (y + imageHeight + textHeight > pageHeight - margin * 2) { // Check for page break (leave space for summary and footer)
+                doc.addPage();
+                y = margin;
+                doc.setFontSize(16);
+                doc.text('Selected Swatches (Continued)', pageWidth / 2, y, { align: 'center' });
+                y += margin * 2;
+            }
+        }
+
+        try {
+            const imgData = await loadImageData(imageSrc);
+            doc.addImage(imgData, 'JPEG', x, y, imageWidth, imageHeight); // Or PNG if your images are PNG
+            doc.setFontSize(8);
+            doc.text(`${imageName} (x${quantity})`, x + imageWidth / 2, y + imageHeight + textHeight -2, { align: 'center' });
+        } catch (error) {
+            console.error("Error loading image for PDF:", imageSrc, error);
+            doc.setFontSize(8);
+            doc.text(`Error: ${imageName}`, x + imageWidth / 2, y + imageHeight / 2, { align: 'center' });
+            doc.text(`(x${quantity})`, x + imageWidth / 2, y + imageHeight / 2 + textHeight - 2, { align: 'center' });
+
+        }
+        x += imageWidth + itemSpacing;
+    }
+
+    // Move to next section for summary, ensure it's on a new page if not enough space
+    y += imageHeight + textHeight + itemSpacing * 2; // Extra spacing before summary
+    if (y + (summaryItems.length + 3) * textHeight + margin * 2 > pageHeight - margin) { // Estimate summary height
+        doc.addPage();
+        y = margin;
+    }
+
+
+    // Summary Section
+    doc.setFontSize(12);
+    doc.text('Order Summary', margin, y);
+    y += textHeight * 1.5;
+    doc.setLineWidth(0.5);
+    doc.line(margin, y, pageWidth - margin, y); // Horizontal line
+    y += textHeight * 1.5;
+
+    doc.setFontSize(10);
+    summaryItems.forEach(item => {
+        if (y + textHeight > pageHeight - margin * 2) { // Check for page break within summary
+             doc.addPage();
+             y = margin;
+             doc.setFontSize(12);
+             doc.text('Order Summary (Continued)', margin, y);
+             y += textHeight * 1.5;
+             doc.setLineWidth(0.5);
+             doc.line(margin, y, pageWidth - margin, y);
+             y += textHeight * 1.5;
+             doc.setFontSize(10);
+        }
+        doc.text(`${item.name}: ${item.quantity}`, margin + 5, y);
+        y += textHeight;
+    });
+
+    y += textHeight / 2;
+    doc.setLineWidth(0.2);
+    doc.line(margin, y, pageWidth - margin, y); // Horizontal line
+    y += textHeight * 1.5;
+
+
+    doc.setFontSize(12);
+    doc.text(`Total Quantity: ${totalQuantity}`, margin + 5, y);
+    y += textHeight * 2;
+
+
+    // Footer with Beijing Time
+    const dateTimeString = getBeijingDateTimeString();
+    doc.setFontSize(8);
+    doc.text(dateTimeString, pageWidth - margin, pageHeight - margin, { align: 'right' });
+
+
+    doc.save('selected_swatches.pdf');
+}
+
+// Helper function to load image data
+function loadImageData(src) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = "Anonymous"; // Important for loading images from other origins if any, or for local files in some browsers
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            try {
+                const dataURL = canvas.toDataURL('image/jpeg'); // Or image/png if preferred
+                resolve(dataURL);
+            } catch (e) {
+                console.error("Canvas toDataURL error:", e);
+                // Fallback for tainted canvas if crossOrigin fails for local files in some setups
+                // This fallback might not always work perfectly but is better than nothing.
+                // A more robust solution for local files is to ensure the server serves them with correct CORS headers
+                // or to use FileReader API if files are selected via an <input type="file">.
+                // Since these are referenced from the project, this might be due to browser security.
+                // Trying to add to PDF without conversion for certain errors.
+                // if (e.name === "SecurityError") {
+                //    resolve(src); // Try to use src directly, jsPDF might handle it
+                // } else {
+                   reject(e);
+                // }
+            }
+        };
+        img.onerror = (err) => {
+            console.error(`Failed to load image: ${src}`, err);
+            reject(err);
+        };
+        img.src = src;
+    });
+}
+
 // --- Event Listeners ---
 // Sidebar controls
 toggleAllBtn.addEventListener('click', toggleAllCategories); 
@@ -550,6 +725,11 @@ selectedSwatchesContainer.addEventListener('click', (event) => {
         openImageModal(swatchItem); // Pass the swatch item to openImageModal
     }
 });
+
+// Add event listener for the export PDF button
+if (exportPdfBtn) {
+    exportPdfBtn.addEventListener('click', exportToPdf);
+}
 
 // --- Initialization ---
 populateMenu();
