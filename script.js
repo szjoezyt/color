@@ -1,6 +1,3 @@
-import Sortable from 'sortablejs';
-import { jsPDF } from 'jspdf';
-
 // --- Data Structure ---
 const categories = [
     {
@@ -449,7 +446,8 @@ async function exportToPdf() {
         return;
     }
 
-    const doc = new jsPDF();
+    // 使用全局变量jspdf，通过UMD方式引入
+    const doc = new jspdf.jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 10;
@@ -469,6 +467,9 @@ async function exportToPdf() {
     doc.text('Selected Swatches', pageWidth / 2, y, { align: 'center' });
     y += margin * 2;
 
+    // 改进的PDF生成流程 - 先收集所有项目信息，再一次性添加到PDF
+    const imageLoadPromises = [];
+    
     for (let i = 0; i < selectedSwatches.length; i++) {
         const swatchElement = selectedSwatches[i];
         const imageName = swatchElement.querySelector('span').textContent;
@@ -478,41 +479,84 @@ async function exportToPdf() {
         totalQuantity += quantity;
         summaryItems.push({ name: imageName, quantity: quantity });
 
-        if (i > 0 && i % itemsPerRow === 0) {
-            x = margin;
-            y += imageHeight + textHeight + itemSpacing;
-            if (y + imageHeight + textHeight > pageHeight - margin * 2) { // Check for page break (leave space for summary and footer)
-                doc.addPage();
-                y = margin;
-                doc.setFontSize(16);
-                doc.text('Selected Swatches (Continued)', pageWidth / 2, y, { align: 'center' });
-                y += margin * 2;
+        // 计算图片在PDF中的位置
+        const itemX = margin + (i % itemsPerRow) * (imageWidth + itemSpacing);
+        const itemRow = Math.floor(i / itemsPerRow);
+        let itemY = margin * 2 + itemRow * (imageHeight + textHeight + itemSpacing);
+
+        // 检查是否需要添加新页面
+        const pageIndex = Math.floor(itemY / (pageHeight - margin * 2));
+        if (pageIndex > 0) {
+            itemY = margin * 2 + (itemY % (pageHeight - margin * 2));
+        }
+
+        // 创建图片加载Promise
+        const imageLoadPromise = loadImageData(imageSrc)
+            .then(imgData => {
+                return {
+                    imgData,
+                    name: imageName,
+                    quantity: quantity,
+                    x: itemX,
+                    y: itemY,
+                    pageIndex: pageIndex
+                };
+            })
+            .catch(() => {
+                // 如果图片加载失败，返回null
+                return {
+                    imgData: null,
+                    name: imageName,
+                    quantity: quantity,
+                    x: itemX,
+                    y: itemY,
+                    pageIndex: pageIndex
+                };
+            });
+
+        imageLoadPromises.push(imageLoadPromise);
+    }
+
+    // 等待所有图片加载完成
+    const imageResults = await Promise.all(imageLoadPromises);
+    
+    // 按页码分组图片
+    const pageGroups = {};
+    imageResults.forEach(item => {
+        if (!pageGroups[item.pageIndex]) {
+            pageGroups[item.pageIndex] = [];
+        }
+        pageGroups[item.pageIndex].push(item);
+    });
+    
+    // 为每一页添加内容
+    Object.keys(pageGroups).forEach((pageIndex, index) => {
+        if (index > 0) {
+            doc.addPage();
+            doc.setFontSize(16);
+            doc.text('Selected Swatches (Continued)', pageWidth / 2, margin, { align: 'center' });
+        }
+        
+        const items = pageGroups[pageIndex];
+        items.forEach(item => {
+            if (item.imgData) {
+                // 如果有图片数据，添加图片
+                doc.addImage(item.imgData, 'JPEG', item.x, item.y, imageWidth, imageHeight);
+            } else {
+                // 如果没有图片数据，添加文本提示
+                doc.setFontSize(8);
+                doc.text(`Error: ${item.name}`, item.x + imageWidth / 2, item.y + imageHeight / 2, { align: 'center' });
             }
-        }
-
-        try {
-            const imgData = await loadImageData(imageSrc);
-            doc.addImage(imgData, 'JPEG', x, y, imageWidth, imageHeight); // Or PNG if your images are PNG
+            // 添加图片名称和数量
             doc.setFontSize(8);
-            doc.text(`${imageName} (x${quantity})`, x + imageWidth / 2, y + imageHeight + textHeight -2, { align: 'center' });
-        } catch (error) {
-            console.error("Error loading image for PDF:", imageSrc, error);
-            doc.setFontSize(8);
-            doc.text(`Error: ${imageName}`, x + imageWidth / 2, y + imageHeight / 2, { align: 'center' });
-            doc.text(`(x${quantity})`, x + imageWidth / 2, y + imageHeight / 2 + textHeight - 2, { align: 'center' });
+            doc.text(`${item.name} (x${item.quantity})`, item.x + imageWidth / 2, item.y + imageHeight + textHeight - 2, { align: 'center' });
+        });
+    });
 
-        }
-        x += imageWidth + itemSpacing;
-    }
-
-    // Move to next section for summary, ensure it's on a new page if not enough space
-    y += imageHeight + textHeight + itemSpacing * 2; // Extra spacing before summary
-    if (y + (summaryItems.length + 3) * textHeight + margin * 2 > pageHeight - margin) { // Estimate summary height
-        doc.addPage();
-        y = margin;
-    }
-
-
+    // 添加新页面用于汇总信息
+    doc.addPage();
+    y = margin;
+    
     // Summary Section
     doc.setFontSize(12);
     doc.text('Order Summary', margin, y);
@@ -543,64 +587,79 @@ async function exportToPdf() {
     doc.line(margin, y, pageWidth - margin, y); // Horizontal line
     y += textHeight * 1.5;
 
-
     doc.setFontSize(12);
     doc.text(`Total Quantity: ${totalQuantity}`, margin + 5, y);
-    y += textHeight * 2;
-
 
     // Footer with Beijing Time
     const dateTimeString = getBeijingDateTimeString();
     doc.setFontSize(8);
     doc.text(dateTimeString, pageWidth - margin, pageHeight - margin, { align: 'right' });
 
-
     doc.save('selected_swatches.pdf');
 }
 
-// Helper function to load image data
+// 改进的图片加载函数，增加错误处理和重试逻辑
 function loadImageData(src) {
     return new Promise((resolve, reject) => {
         const img = new Image();
-        img.crossOrigin = "Anonymous"; // Important for loading images from other origins if any, or for local files in some browsers
+        
+        // 尝试不设置跨域属性
         img.onload = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0);
             try {
-                const dataURL = canvas.toDataURL('image/jpeg'); // Or image/png if preferred
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                
+                const dataURL = canvas.toDataURL('image/jpeg');
                 resolve(dataURL);
             } catch (e) {
-                console.error("Canvas toDataURL error:", e);
-                // Fallback for tainted canvas if crossOrigin fails for local files in some setups
-                // This fallback might not always work perfectly but is better than nothing.
-                // A more robust solution for local files is to ensure the server serves them with correct CORS headers
-                // or to use FileReader API if files are selected via an <input type="file">.
-                // Since these are referenced from the project, this might be due to browser security.
-                // Trying to add to PDF without conversion for certain errors.
-                // if (e.name === "SecurityError") {
-                //    resolve(src); // Try to use src directly, jsPDF might handle it
-                // } else {
-                   reject(e);
-                // }
+                console.error("Canvas error:", e);
+                // 如果出错，尝试直接返回图片元素
+                if (typeof img.src === 'string' && img.src.startsWith('data:')) {
+                    resolve(img.src);
+                } else {
+                    reject(e);
+                }
             }
         };
-        img.onerror = (err) => {
-            console.error(`Failed to load image: ${src}`, err);
-            reject(err);
+        
+        img.onerror = () => {
+            // 如果加载失败，尝试改用绝对路径（如果在GitHub Pages上）
+            if (window.location.href.includes('github.io') && !src.startsWith('http')) {
+                const repoName = window.location.pathname.split('/')[1] || '';
+                const basePath = window.location.origin + '/' + repoName;
+                const newSrc = basePath + '/' + src;
+                
+                console.log(`Trying absolute path: ${newSrc}`);
+                
+                const retryImg = new Image();
+                retryImg.crossOrigin = "Anonymous";
+                retryImg.onload = () => {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = retryImg.width;
+                        canvas.height = retryImg.height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(retryImg, 0, 0);
+                        resolve(canvas.toDataURL('image/jpeg'));
+                    } catch (e) {
+                        reject(e);
+                    }
+                };
+                retryImg.onerror = reject;
+                retryImg.src = newSrc;
+            } else {
+                reject(new Error(`Failed to load image: ${src}`));
+            }
         };
+        
         img.src = src;
     });
 }
 
 // --- Event Listeners ---
-// MOVED TO DOMContentLoaded
-
-// --- Initialization ---
-// MOVED TO DOMContentLoaded
-
 document.addEventListener('DOMContentLoaded', () => {
     // Populate the menu with swatches
     populateMenu();
@@ -608,37 +667,41 @@ document.addEventListener('DOMContentLoaded', () => {
     updatePlaceholderVisibility(); 
 
     // Initialize SortableJS for the selected swatches container
-    new Sortable(selectedSwatchesContainer, {
-        animation: 250, 
-        ghostClass: 'sortable-ghost', 
-        dragClass: 'sortable-drag', 
-        forceFallback: true, 
-        fallbackOnBody: true, 
-        swapThreshold: 0.65, 
-        filter: '.remove-swatch-btn', 
-        preventOnFilter: true, 
-        chosenClass: 'sortable-chosen', 
-        onMove: function (evt) {
-            const related = evt.related;
-            if (related) {
-                related.style.transition = 'transform 0.2s ease';
-                if (evt.to === evt.from) {
-                    if (evt.oldIndex < evt.newIndex) {
-                        related.style.transform = 'translateX(100%)';
-                    } else {
-                        related.style.transform = 'translateX(-100%)';
+    if (typeof Sortable !== 'undefined') {
+        new Sortable(selectedSwatchesContainer, {
+            animation: 250, 
+            ghostClass: 'sortable-ghost', 
+            dragClass: 'sortable-drag', 
+            forceFallback: true, 
+            fallbackOnBody: true, 
+            swapThreshold: 0.65, 
+            filter: '.remove-swatch-btn', 
+            preventOnFilter: true, 
+            chosenClass: 'sortable-chosen', 
+            onMove: function (evt) {
+                const related = evt.related;
+                if (related) {
+                    related.style.transition = 'transform 0.2s ease';
+                    if (evt.to === evt.from) {
+                        if (evt.oldIndex < evt.newIndex) {
+                            related.style.transform = 'translateX(100%)';
+                        } else {
+                            related.style.transform = 'translateX(-100%)';
+                        }
                     }
                 }
+            },
+            onEnd: function (evt) {
+                const related = evt.related;
+                if (related) {
+                    related.style.transition = '';
+                    related.style.transform = '';
+                }
             }
-        },
-        onEnd: function (evt) {
-            const related = evt.related;
-            if (related) {
-                related.style.transition = '';
-                related.style.transform = '';
-            }
-        }
-    });
+        });
+    } else {
+        console.error("Sortable library is not loaded!");
+    }
 
     // Add mouse wheel zoom functionality to modal image
     if (modalImage) { // Ensure modalImage exists
