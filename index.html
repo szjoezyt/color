@@ -4,14 +4,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>color picker</title>
     <link rel="stylesheet" href="style.css">
-    <script type="importmap">
-      {
-        "imports": {
-          "sortablejs": "https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/+esm",
-          "jspdf": "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"
-        }
-      }
-    </script>
+    
+    <!-- 使用CDN直接加载库，替代importmap -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    
     <style>
         /* Add this style for the footer links */
         .footer-links {
@@ -47,7 +44,7 @@
             <div class="sidebar-controls">
                  <!-- <button id="expand-all-btn">全部展开</button> -->
                  <!-- <button id="collapse-all-btn">全部折叠</button> -->
-                 <button id="toggle-all-btn" class="toggle-button">折叠/展开EXPAND/COLLAPSE</button>
+                 <button id="toggle-all-btn" class="toggle-button">折叠/展开EXPAND/COLLAPSE</button>    
             </div>
             <div id="category-menu">
                 <!-- Categories will be loaded here by JS -->
@@ -60,7 +57,7 @@
             </div>
              <p id="selection-placeholder" class="placeholder-text">请从左侧选择板材select panels from left</p>
              <!-- Add Export PDF Button -->
-             <button id="export-pdf-btn" class="export-button">导出 PDF Export PDF</button>            
+             <button id="export-pdf-btn" class="export-button">导出 PDF Export PDF</button>
         </main>
     </div>
 
@@ -78,6 +75,7 @@
         <a href="https://www.sujoeisme.com/contact" target="_blank">CONTACT ME 联系我</a>
     </div>
 
-    <script type="module" src="script.js"></script>
+    <!-- 将type="module"改为普通script -->
+    <script src="script.js"></script>
 </body>
 </html>
