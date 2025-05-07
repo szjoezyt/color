@@ -450,59 +450,6 @@ modalImage.addEventListener('wheel', (event) => {
     modalImage.style.transformOrigin = 'center center';
     modalImage.style.transform = `scale(${newScale})`;
 });
-// Function to export selected swatches to PDF
-async function exportToPDF() {
-    const selectedSwatches = selectedSwatchesContainer.querySelectorAll('.swatch-item');
-    if (selectedSwatches.length === 0) {
-        alert('请先选择板材。Please select panels first.');
-        return;
-    }
-
-    const doc = new jsPDF();
-    let yOffset = 10; // Starting y position
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const imageWidth = 50; // Width of the image in the PDF
-    const imageHeight = 50; // Height of the image in the PDF
-    const margin = 10; // Margin between elements
-
-    // Add title
-    doc.setFontSize(16);
-    doc.text('Selected Panels', pageWidth / 2, yOffset, { align: 'center' });
-    yOffset += 10;
-
-    // Process each selected swatch
-    for (const swatch of selectedSwatches) {
-        const name = swatch.querySelector('span').textContent;
-        const count = swatch.dataset.count || '1';
-        const imageSrc = swatch.dataset.image;
-
-        // Load the image
-        const img = new Image();
-        img.src = imageSrc;
-        await new Promise((resolve) => {
-            img.onload = resolve;
-        });
-
-        // Check if we need a new page
-        if (yOffset + imageHeight + margin > doc.internal.pageSize.getHeight()) {
-            doc.addPage();
-            yOffset = 10;
-        }
-
-        // Add image
-        doc.addImage(img, 'JPEG', margin, yOffset, imageWidth, imageHeight);
-
-        // Add text (name and count)
-        doc.setFontSize(12);
-        doc.text(`Name: ${name}`, margin + imageWidth + margin, yOffset + 10);
-        doc.text(`Count: x${count}`, margin + imageWidth + margin, yOffset + 20);
-
-        yOffset += imageHeight + margin;
-    }
-
-    // Save the PDF
-    doc.save('selected_panels.pdf');
-}
 
 // --- Event Listeners ---
 // Sidebar controls
@@ -603,9 +550,6 @@ selectedSwatchesContainer.addEventListener('click', (event) => {
         openImageModal(swatchItem); // Pass the swatch item to openImageModal
     }
 });
-// Add event listener for export button
-exportPdfBtn.addEventListener('click', exportToPDF);
-
 
 // --- Initialization ---
 populateMenu();
