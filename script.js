@@ -594,12 +594,14 @@ new Sortable(selectedSwatchesContainer, {
 // Function to generate and export PDF
 async function exportPdf() {
     // Ensure jsPDF is available (assuming it's loaded via script tag in HTML)
+    // Reverted check for window.jspdf
     if (typeof window.jspdf === 'undefined' || typeof window.jspdf.jsPDF === 'undefined') {
         console.error('jsPDF library not loaded. Please include it in your index.html.');
-        alert('PDF 导出功能所需的库未加载。请检查页面设置，请确认已在 index.html 中添加 jsPDF 的 script 引用标签。');
+        alert('PDF 导出功能所需的库未加载。请检查页面设置。');
         return;
     }
 
+    // Reverted: Using window.jspdf.jsPDF instead of import
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
@@ -609,163 +611,90 @@ async function exportPdf() {
         return;
     }
 
-    console.log('正在生成PDF，文件将自动下载到您的默认下载目录。'); // Add console log for download location
-
-    let yOffset = 15; // Starting Y offset for content, leave space for title
+    let yOffset = 10; // Starting Y offset for content
     const margin = 10;
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-
-    // --- Layout Constants ---
-    const itemWidth = 45; // Width allocated for each item (including image and text space)
-    const itemHeight = 60; // Height allocated for each item
-    const imageWidth = 30; // Image width in PDF
-    const imageHeight = 40; // Image height in PDF
-    const imageTextSpacing = 5; // Space between image and text
-    const columnSpacing = 10; // Horizontal space between columns
-    const rowSpacing = 8; // Vertical space between rows
-
-    const itemsPerRow = Math.floor((pageWidth - 2 * margin + columnSpacing) / (itemWidth + columnSpacing));
-    let currentX = margin;
-    let currentY = yOffset;
-    let itemsInCurrentRow = 0;
+    const imgWidth = 30; // Width for swatch images in PDF
+    const imgHeight = 40; // Height for swatch images in PDF
+    const textX = margin + imgWidth + 5; // X position for text next to image
     let totalQuantity = 0;
 
     // Add title
     doc.setFontSize(18);
-    doc.text('Selected Panel Summary', pageWidth / 2, margin, { align: 'center' }); // English title
-    
-    // Add a simple horizontal line below the title
-    doc.line(margin, margin + 7, pageWidth - margin, margin + 7); // Draw line below title
-    yOffset = margin + 15; // Adjust starting Y after title and line
-    currentY = yOffset; // Reset currentY for the first row of items
+    doc.text('选中色板汇总信息', pageWidth / 2, yOffset, { align: 'center' });
+    yOffset += 15;
 
-    // Set font for item details (should be fine for English/numbers)
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10); // Smaller font for item details
+    doc.setFontSize(12);
 
-    // Collect promises for image loading
-    const imagePromises = [];
-    const swatchData = [];
-
-    selectedSwatches.forEach(swatchElement => {
+    for (const swatchElement of selectedSwatches) {
         const id = swatchElement.dataset.id;
-        // Use textContent directly as it's English/numbers
-        const name = swatchElement.querySelector('span').textContent; 
+        const name = swatchElement.querySelector('span').textContent; // Assuming the name is in the span
         const count = parseInt(swatchElement.dataset.count || '1', 10);
-        // *** Use data-image (small image) instead of data-big-image ***
-        const imageSrc = swatchElement.dataset.image; // Use small image for PDF
+        const bigImageSrc = swatchElement.dataset.bigImage; // Use big image for PDF
 
         totalQuantity += count;
-        swatchData.push({ id, name, count, imageSrc });
-        imagePromises.push(loadImage(imageSrc)); // Load small image
-    });
 
-    // Wait for all images to load concurrently
-    const imageDataArray = await Promise.all(imagePromises.map(p => p.catch(e => { console.error('Image loading failed:', e); return null; }))); // Handle individual image load errors
-
-    // Add swatches to PDF in a grid layout
-    for (let i = 0; i < swatchData.length; i++) {
-        const swatch = swatchData[i];
-        const imgData = imageDataArray[i];
-
-        // Check if enough space for the next item in the current row
-        if (itemsInCurrentRow >= itemsPerRow) {
-             // Move to the next row
-            currentX = margin;
-            currentY += itemHeight + rowSpacing;
-            itemsInCurrentRow = 0;
-        }
-
-        // Check if enough space for the next row on the page, if not, add a new page
-        if (currentY + itemHeight > pageHeight - margin - 30) { // Added buffer for bottom text and total
+        // Check if enough space for the next item, if not, add a new page
+        if (yOffset + imgHeight + 5 > pageHeight - margin) {
             doc.addPage();
-            currentX = margin;
-            currentY = margin + 10; // Reset yOffset for new page, leave space at top
-             // Optional: Re-add title on new page if desired
-             // doc.setFontSize(14);
-             // doc.setFont('helvetica', 'bold');
-             // doc.text('Selected Panel Summary (Continued)', pageWidth / 2, margin, { align: 'center' });
-             // doc.setFont('helvetica', 'normal');
-             // doc.setFontSize(10);
+            yOffset = margin; // Reset yOffset for new page
         }
 
         // Add image
-        if (imgData) {
-             // Calculate image position to be centered within the item width horizontally
-             const imgX = currentX + (itemWidth - imageWidth) / 2;
-             doc.addImage(imgData, 'JPEG', imgX, currentY, imageWidth, imageHeight);
-        } else {
-            // Add placeholder text if image fails
-            doc.text('Image Load Failed', currentX + itemWidth / 2, currentY + imageHeight / 2, { align: 'center' }); // English Placeholder
+        // We need to load the image first. Using a Promise to handle async image loading.
+        try {
+            const imgData = await loadImage(bigImageSrc);
+            doc.addImage(imgData, 'JPEG', margin, yOffset, imgWidth, imgHeight);
+        } catch (error) {
+            console.error(`Error loading image ${bigImageSrc}:`, error);
+            // Optionally add a placeholder text if image fails to load
+            doc.text('图片加载失败', margin, yOffset + imgHeight / 2);
         }
 
-        // Add text (name and quantity) below the image
-        const textY = currentY + imageHeight + 3; // Position text below image with small gap
-        const textXPos = currentX + itemWidth / 2; // Center text below image
+        // Add text (name and quantity)
+        doc.text(`型号: ${name}`, textX, yOffset + imgHeight / 3);
+        doc.text(`数量: ${count}`, textX, yOffset + imgHeight / 3 + 7);
 
-        // Split name if too long and add
-        // No need for complex font handling now, default should work for English/numbers
-        const nameLines = doc.splitTextToSize(swatch.name, itemWidth - 5); // Adjust text wrapping width slightly
-        doc.text(nameLines, textXPos, textY, { align: 'center' });
-        
-        // Add quantity below name
-        const quantityY = textY + nameLines.length * doc.getFontSize() / doc.internal.scaleFactor + 2; // Position quantity below name lines
-        doc.text(`Qty: ${swatch.count}`, textXPos, quantityY, { align: 'center' }); // English Quantity Text
-
-        // Move to the next item position
-        currentX += itemWidth + columnSpacing;
-        itemsInCurrentRow++;
-    }
-
-    // Move yOffset down past the last row for summary
-     const lastRowBottom = currentY + itemHeight;
-    yOffset = Math.max(lastRowBottom + 20, pageHeight - margin - 40); // Ensure enough space at bottom for total and date
-    
-    // Check space before adding line and total quantity
-    if (yOffset + 20 > pageHeight - margin) {
-        doc.addPage();
-        yOffset = margin + 10; // Reset yOffset for new page
+        yOffset += imgHeight + 5; // Move down for the next item
     }
 
     // Add a horizontal line for the summary/bill section
+    yOffset += 10; // Add some space before the line
+    if (yOffset + 10 > pageHeight - margin) { // Check space before adding line and total
+        doc.addPage();
+        yOffset = margin;
+    }
     doc.line(margin, yOffset, pageWidth - margin, yOffset); // Draw line
     yOffset += 10;
 
     // Add total quantity
     doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold'); // Bold font for total
-    doc.text(`Total Quantity: ${totalQuantity}`, pageWidth - margin, yOffset, { align: 'right' }); // English Total Text
+    doc.text(`总计数量: ${totalQuantity}`, pageWidth - margin, yOffset, { align: 'right' });
 
     // Add export date and time in Beijing time at bottom left
     const now = new Date();
     // Use toLocaleString with options for time zone if supported
     let exportDateTime;
     try {
-        // Use a format suitable for English display if needed, or keep zh-CN if that's preferred format
-        // Using zh-CN with timeZone: 'Asia/Shanghai' will give Chinese date/time format
-        // If strictly English format is needed, might need to construct the string manually or use other date formatting libraries/methods.
-        exportDateTime = now.toLocaleString('en-US', { timeZone: 'Asia/Shanghai', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' }); // Changed locale to en-US
+        exportDateTime = now.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' });
     } catch (e) {
-        // Fallback if toLocaleString with timeZone or en-US fails
-        console.warn('toLocaleString with options failed, using default date string.', e);
-        exportDateTime = now.toLocaleString(); // Fallback to default locale string
+        // Fallback if timeZone option is not supported widely or throws error
+        console.warn('toLocaleString with timeZone failed, using default date string.', e);
+        exportDateTime = now.toLocaleString();
     }
 
     doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal'); // Normal font for date
-    doc.text(`Export Date: ${exportDateTime}`, margin, pageHeight - margin); // English Export Date Text
+    doc.text(`导出时间: ${exportDateTime}`, margin, pageHeight - margin);
 
     // Save the PDF
-    doc.save('Selected_Panel_Summary.pdf'); // English Filename
+    doc.save('选中色板汇总.pdf');
 }
 
 // Helper function to load image and return base64 data
 function loadImage(url) {
     return new Promise((resolve, reject) => {
         const img = new Image();
-        // Added cache busting to image URL to prevent browser caching issues during development/testing
-        const cacheBuster = '?cache=' + new Date().getTime();
         img.crossOrigin = 'Anonymous'; // Needed to avoid CORS issues when drawing to canvas
         img.onload = () => {
             const canvas = document.createElement('canvas');
@@ -774,15 +703,12 @@ function loadImage(url) {
             canvas.height = img.height;
             ctx.drawImage(img, 0, 0);
             // Convert to JPEG to keep file size down and ensure compatibility
-            // Adjust quality for smaller file size, e.g., 0.7
-            resolve(canvas.toDataURL('image/jpeg', 0.7)); // Slightly reduced quality to 0.7
+            resolve(canvas.toDataURL('image/jpeg'));
         };
         img.onerror = (error) => {
-            console.error(`Error loading image ${url}:`, error); // Log specific image error
             reject(error);
         };
-        // Append cache buster to the image URL
-        img.src = url + cacheBuster;
+        img.src = url;
     });
 }
 
