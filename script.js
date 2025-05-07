@@ -633,11 +633,15 @@ async function exportPdf() {
 
     // Add title
     doc.setFontSize(18);
-    doc.text('选中色板汇总信息', pageWidth / 2, margin, { align: 'center' }); // Title slightly higher
+    doc.text('Selected Panel Summary', pageWidth / 2, margin, { align: 'center' }); // English title
     
-    // Add horizontal line below title
-    // doc.line(margin, yOffset - 5, pageWidth - margin, yOffset - 5); // Add line below title
+    // Add a simple horizontal line below the title
+    doc.line(margin, margin + 7, pageWidth - margin, margin + 7); // Draw line below title
+    yOffset = margin + 15; // Adjust starting Y after title and line
+    currentY = yOffset; // Reset currentY for the first row of items
 
+    // Set font for item details (should be fine for English/numbers)
+    doc.setFont('helvetica', 'normal');
     doc.setFontSize(10); // Smaller font for item details
 
     // Collect promises for image loading
@@ -646,10 +650,12 @@ async function exportPdf() {
 
     selectedSwatches.forEach(swatchElement => {
         const id = swatchElement.dataset.id;
-        const name = swatchElement.querySelector('span').textContent; // Assuming the name is in the span
+        // Use textContent directly as it's English/numbers
+        const name = swatchElement.querySelector('span').textContent; 
         const count = parseInt(swatchElement.dataset.count || '1', 10);
         // *** Use data-image (small image) instead of data-big-image ***
         const imageSrc = swatchElement.dataset.image; // Use small image for PDF
+
         totalQuantity += count;
         swatchData.push({ id, name, count, imageSrc });
         imagePromises.push(loadImage(imageSrc)); // Load small image
@@ -663,22 +669,24 @@ async function exportPdf() {
         const swatch = swatchData[i];
         const imgData = imageDataArray[i];
 
-        // Check if enough space for the next item in the current row or on the page
-        if (currentX + itemWidth > pageWidth - margin) {
-            // Move to the next row
+        // Check if enough space for the next item in the current row
+        if (itemsInCurrentRow >= itemsPerRow) {
+             // Move to the next row
             currentX = margin;
             currentY += itemHeight + rowSpacing;
             itemsInCurrentRow = 0;
         }
 
         // Check if enough space for the next row on the page, if not, add a new page
-        if (currentY + itemHeight > pageHeight - margin - 20) { // Added buffer for bottom text
+        if (currentY + itemHeight > pageHeight - margin - 30) { // Added buffer for bottom text and total
             doc.addPage();
             currentX = margin;
-            currentY = margin; // Reset yOffset for new page
-             // Re-add title on new page if desired (optional)
-             // doc.setFontSize(18);
-             // doc.text('选中色板汇总信息 (续)', pageWidth / 2, margin, { align: 'center' });
+            currentY = margin + 10; // Reset yOffset for new page, leave space at top
+             // Optional: Re-add title on new page if desired
+             // doc.setFontSize(14);
+             // doc.setFont('helvetica', 'bold');
+             // doc.text('Selected Panel Summary (Continued)', pageWidth / 2, margin, { align: 'center' });
+             // doc.setFont('helvetica', 'normal');
              // doc.setFontSize(10);
         }
 
@@ -689,7 +697,7 @@ async function exportPdf() {
              doc.addImage(imgData, 'JPEG', imgX, currentY, imageWidth, imageHeight);
         } else {
             // Add placeholder text if image fails
-            doc.text('图片加载失败', currentX + itemWidth / 2, currentY + imageHeight / 2, { align: 'center' });
+            doc.text('Image Load Failed', currentX + itemWidth / 2, currentY + imageHeight / 2, { align: 'center' }); // English Placeholder
         }
 
         // Add text (name and quantity) below the image
@@ -697,26 +705,27 @@ async function exportPdf() {
         const textXPos = currentX + itemWidth / 2; // Center text below image
 
         // Split name if too long and add
-        const nameLines = doc.splitTextToSize(swatch.name, itemWidth - 5);
+        // No need for complex font handling now, default should work for English/numbers
+        const nameLines = doc.splitTextToSize(swatch.name, itemWidth - 5); // Adjust text wrapping width slightly
         doc.text(nameLines, textXPos, textY, { align: 'center' });
         
         // Add quantity below name
         const quantityY = textY + nameLines.length * doc.getFontSize() / doc.internal.scaleFactor + 2; // Position quantity below name lines
-        doc.text(`数量: ${swatch.count}`, textXPos, quantityY, { align: 'center' });
-        
+        doc.text(`Qty: ${swatch.count}`, textXPos, quantityY, { align: 'center' }); // English Quantity Text
+
         // Move to the next item position
         currentX += itemWidth + columnSpacing;
         itemsInCurrentRow++;
     }
 
     // Move yOffset down past the last row for summary
-    const lastRowBottom = currentY + itemHeight;
-    yOffset = Math.max(lastRowBottom + 20, pageHeight - margin - 40); // Ensure enough space at bottom
-
+     const lastRowBottom = currentY + itemHeight;
+    yOffset = Math.max(lastRowBottom + 20, pageHeight - margin - 40); // Ensure enough space at bottom for total and date
+    
     // Check space before adding line and total quantity
     if (yOffset + 20 > pageHeight - margin) {
         doc.addPage();
-        yOffset = margin;
+        yOffset = margin + 10; // Reset yOffset for new page
     }
 
     // Add a horizontal line for the summary/bill section
@@ -725,31 +734,38 @@ async function exportPdf() {
 
     // Add total quantity
     doc.setFontSize(14);
-    doc.text(`总计数量: ${totalQuantity}`, pageWidth - margin, yOffset, { align: 'right' });
+    doc.setFont('helvetica', 'bold'); // Bold font for total
+    doc.text(`Total Quantity: ${totalQuantity}`, pageWidth - margin, yOffset, { align: 'right' }); // English Total Text
 
     // Add export date and time in Beijing time at bottom left
     const now = new Date();
     // Use toLocaleString with options for time zone if supported
     let exportDateTime;
     try {
-        exportDateTime = now.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' });
+        // Use a format suitable for English display if needed, or keep zh-CN if that's preferred format
+        // Using zh-CN with timeZone: 'Asia/Shanghai' will give Chinese date/time format
+        // If strictly English format is needed, might need to construct the string manually or use other date formatting libraries/methods.
+        exportDateTime = now.toLocaleString('en-US', { timeZone: 'Asia/Shanghai', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' }); // Changed locale to en-US
     } catch (e) {
-        // Fallback if timeZone option is not supported widely or throws error
-        console.warn('toLocaleString with timeZone failed, using default date string.', e);
-        exportDateTime = now.toLocaleString();
+        // Fallback if toLocaleString with timeZone or en-US fails
+        console.warn('toLocaleString with options failed, using default date string.', e);
+        exportDateTime = now.toLocaleString(); // Fallback to default locale string
     }
 
     doc.setFontSize(9);
-    doc.text(`导出时间: ${exportDateTime}`, margin, pageHeight - margin);
+    doc.setFont('helvetica', 'normal'); // Normal font for date
+    doc.text(`Export Date: ${exportDateTime}`, margin, pageHeight - margin); // English Export Date Text
 
     // Save the PDF
-    doc.save('选中色板汇总.pdf');
+    doc.save('Selected_Panel_Summary.pdf'); // English Filename
 }
 
 // Helper function to load image and return base64 data
 function loadImage(url) {
     return new Promise((resolve, reject) => {
         const img = new Image();
+        // Added cache busting to image URL to prevent browser caching issues during development/testing
+        const cacheBuster = '?cache=' + new Date().getTime();
         img.crossOrigin = 'Anonymous'; // Needed to avoid CORS issues when drawing to canvas
         img.onload = () => {
             const canvas = document.createElement('canvas');
@@ -759,12 +775,14 @@ function loadImage(url) {
             ctx.drawImage(img, 0, 0);
             // Convert to JPEG to keep file size down and ensure compatibility
             // Adjust quality for smaller file size, e.g., 0.7
-            resolve(canvas.toDataURL('image/jpeg', 0.8)); // Reduced quality slightly
+            resolve(canvas.toDataURL('image/jpeg', 0.7)); // Slightly reduced quality to 0.7
         };
         img.onerror = (error) => {
+            console.error(`Error loading image ${url}:`, error); // Log specific image error
             reject(error);
         };
-        img.src = url;
+        // Append cache buster to the image URL
+        img.src = url + cacheBuster;
     });
 }
 
