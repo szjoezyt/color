@@ -1,4 +1,5 @@
 import Sortable from 'sortablejs';
+import { jsPDF } from 'jspdf';
 
 // --- Data Structure ---
 const categories = [
@@ -178,6 +179,7 @@ const toggleAllBtn = document.getElementById('toggle-all-btn');
 const imageModal = document.getElementById('image-modal');
 const modalImage = document.getElementById('modal-image');
 const closeModalBtn = document.querySelector('.close-modal');
+const exportPdfBtn = document.getElementById('export-pdf-btn'); // Add export button reference
 
 // --- State ---
 let nextInstanceId = 0; // Counter for unique instance IDs
@@ -416,7 +418,7 @@ function closeImageModal() {
         modalImage.src = "";
          // Reset image scale and position when modal closes
         modalImage.style.transform = 'scale(1) translate(0, 0)';
-        modalImage.style.transformOrigin = 'center center';       
+        modalImage.style.transformOrigin = 'center center';
     }, 300); // Match CSS animation duration
 }
 
@@ -450,6 +452,7 @@ modalImage.addEventListener('wheel', (event) => {
     modalImage.style.transformOrigin = 'center center';
     modalImage.style.transform = `scale(${newScale})`;
 });
+
 // Function to export selected swatches to PDF
 async function exportToPDF() {
     const selectedSwatches = selectedSwatchesContainer.querySelectorAll('.swatch-item');
@@ -603,9 +606,9 @@ selectedSwatchesContainer.addEventListener('click', (event) => {
         openImageModal(swatchItem); // Pass the swatch item to openImageModal
     }
 });
+
 // Add event listener for export button
 exportPdfBtn.addEventListener('click', exportToPDF);
-
 
 // --- Initialization ---
 populateMenu();
