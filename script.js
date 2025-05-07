@@ -1,4 +1,5 @@
 import Sortable from 'sortablejs';
+import { jsPDF } from 'jspdf';
 
 // --- Data Structure ---
 const categories = [
@@ -589,3 +590,128 @@ new Sortable(selectedSwatchesContainer, {
         }
     }
 });
+
+// Function to generate and export PDF
+async function exportPdf() {
+    // Ensure jsPDF is available (assuming it's loaded via script tag in HTML)
+    // if (typeof window.jspdf === 'undefined' || typeof window.jspdf.jsPDF === 'undefined') {
+    //     console.error('jsPDF library not loaded. Please include it in your index.html.');
+    //     alert('PDF 导出功能所需的库未加载。请检查页面设置。');
+    //     return;
+    // }
+
+    // const { jsPDF } = window.jspdf; // Removed: Using import instead
+    const doc = new jsPDF();
+
+    const selectedSwatches = selectedSwatchesContainer.querySelectorAll('.swatch-item');
+    if (selectedSwatches.length === 0) {
+        alert('请先选择需要导出的色板。');
+        return;
+    }
+
+    let yOffset = 10; // Starting Y offset for content
+    const margin = 10;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const imgWidth = 30; // Width for swatch images in PDF
+    const imgHeight = 40; // Height for swatch images in PDF
+    const textX = margin + imgWidth + 5; // X position for text next to image
+    let totalQuantity = 0;
+
+    // Add title
+    doc.setFontSize(18);
+    doc.text('选中色板汇总信息', pageWidth / 2, yOffset, { align: 'center' });
+    yOffset += 15;
+
+    doc.setFontSize(12);
+
+    for (const swatchElement of selectedSwatches) {
+        const id = swatchElement.dataset.id;
+        const name = swatchElement.querySelector('span').textContent; // Assuming the name is in the span
+        const count = parseInt(swatchElement.dataset.count || '1', 10);
+        const bigImageSrc = swatchElement.dataset.bigImage; // Use big image for PDF
+
+        totalQuantity += count;
+
+        // Check if enough space for the next item, if not, add a new page
+        if (yOffset + imgHeight + 5 > pageHeight - margin) {
+            doc.addPage();
+            yOffset = margin; // Reset yOffset for new page
+        }
+
+        // Add image
+        // We need to load the image first. Using a Promise to handle async image loading.
+        try {
+            const imgData = await loadImage(bigImageSrc);
+            doc.addImage(imgData, 'JPEG', margin, yOffset, imgWidth, imgHeight);
+        } catch (error) {
+            console.error(`Error loading image ${bigImageSrc}:`, error);
+            // Optionally add a placeholder text if image fails to load
+            doc.text('图片加载失败', margin, yOffset + imgHeight / 2);
+        }
+
+        // Add text (name and quantity)
+        doc.text(`型号: ${name}`, textX, yOffset + imgHeight / 3);
+        doc.text(`数量: ${count}`, textX, yOffset + imgHeight / 3 + 7);
+
+        yOffset += imgHeight + 5; // Move down for the next item
+    }
+
+    // Add a horizontal line for the summary/bill section
+    yOffset += 10; // Add some space before the line
+    if (yOffset + 10 > pageHeight - margin) { // Check space before adding line and total
+        doc.addPage();
+        yOffset = margin;
+    }
+    doc.line(margin, yOffset, pageWidth - margin, yOffset); // Draw line
+    yOffset += 10;
+
+    // Add total quantity
+    doc.setFontSize(14);
+    doc.text(`总计数量: ${totalQuantity}`, pageWidth - margin, yOffset, { align: 'right' });
+
+    // Add export date and time in Beijing time at bottom left
+    const now = new Date();
+    // Use toLocaleString with options for time zone if supported
+    let exportDateTime;
+    try {
+        exportDateTime = now.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' });
+    } catch (e) {
+        // Fallback if timeZone option is not supported widely or throws error
+        console.warn('toLocaleString with timeZone failed, using default date string.', e);
+        exportDateTime = now.toLocaleString();
+    }
+
+    doc.setFontSize(9);
+    doc.text(`导出时间: ${exportDateTime}`, margin, pageHeight - margin);
+
+    // Save the PDF
+    doc.save('选中色板汇总.pdf');
+}
+
+// Helper function to load image and return base64 data
+function loadImage(url) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'Anonymous'; // Needed to avoid CORS issues when drawing to canvas
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+            // Convert to JPEG to keep file size down and ensure compatibility
+            resolve(canvas.toDataURL('image/jpeg'));
+        };
+        img.onerror = (error) => {
+            reject(error);
+        };
+        img.src = url;
+    });
+}
+
+// --- Event Listener for Export Button ---
+const exportPdfBtn = document.getElementById('export-pdf-btn');
+if (exportPdfBtn) {
+    exportPdfBtn.addEventListener('click', exportPdf);
+}
