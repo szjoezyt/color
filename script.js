@@ -453,23 +453,16 @@ async function exportToPdf() {
     const margin = 10;
     const imageWidth = 40; // Approximate width for each image
     const imageHeight = 30; // Approximate height for each image
-    const textHeight = 5;   // Height for text below image
+    const textHeight = 10;   // 增加文本高度，确保名称能完整显示
     const itemSpacing = 5;  // Spacing between items
     const itemsPerRow = Math.floor((pageWidth - 2 * margin) / (imageWidth + itemSpacing));
+    const itemHeight = imageHeight + textHeight + itemSpacing; // 每个项目（图片+文字）的总高度
 
-    let x = margin;
-    let y = margin;
     let totalQuantity = 0;
     const summaryItems = [];
-
-    // Title
-    doc.setFontSize(16);
-    doc.text('Selected Swatches', pageWidth / 2, y, { align: 'center' });
-    y += margin * 2;
-
-    // 改进的PDF生成流程 - 先收集所有项目信息，再一次性添加到PDF
     const imageLoadPromises = [];
     
+    // 收集所有色板信息并加载图片
     for (let i = 0; i < selectedSwatches.length; i++) {
         const swatchElement = selectedSwatches[i];
         const imageName = swatchElement.querySelector('span').textContent;
@@ -479,38 +472,20 @@ async function exportToPdf() {
         totalQuantity += quantity;
         summaryItems.push({ name: imageName, quantity: quantity });
 
-        // 计算图片在PDF中的位置
-        const itemX = margin + (i % itemsPerRow) * (imageWidth + itemSpacing);
-        const itemRow = Math.floor(i / itemsPerRow);
-        let itemY = margin * 2 + itemRow * (imageHeight + textHeight + itemSpacing);
-
-        // 检查是否需要添加新页面
-        const pageIndex = Math.floor(itemY / (pageHeight - margin * 2));
-        if (pageIndex > 0) {
-            itemY = margin * 2 + (itemY % (pageHeight - margin * 2));
-        }
-
-        // 创建图片加载Promise
+        // 加载图片
         const imageLoadPromise = loadImageData(imageSrc)
             .then(imgData => {
                 return {
                     imgData,
                     name: imageName,
-                    quantity: quantity,
-                    x: itemX,
-                    y: itemY,
-                    pageIndex: pageIndex
+                    quantity: quantity
                 };
             })
             .catch(() => {
-                // 如果图片加载失败，返回null
                 return {
                     imgData: null,
                     name: imageName,
-                    quantity: quantity,
-                    x: itemX,
-                    y: itemY,
-                    pageIndex: pageIndex
+                    quantity: quantity
                 };
             });
 
@@ -520,305 +495,254 @@ async function exportToPdf() {
     // 等待所有图片加载完成
     const imageResults = await Promise.all(imageLoadPromises);
     
-    // 按页码分组图片
-    const pageGroups = {};
-    imageResults.forEach(item => {
-        if (!pageGroups[item.pageIndex]) {
-            pageGroups[item.pageIndex] = [];
-        }
-        pageGroups[item.pageIndex].push(item);
-    });
+    // 计算总页数和内容布局
+    const rows = Math.ceil(imageResults.length / itemsPerRow);
+    const imageContentHeight = rows * itemHeight + margin * 3;
+    const summaryHeight = summaryItems.length * textHeight + margin * 4 + textHeight * 2; // 包含标题和总计
     
-    // 为每一页添加内容
-    Object.keys(pageGroups).forEach((pageIndex, index) => {
-        if (index > 0) {
-            doc.addPage();
-            doc.setFontSize(16);
-            doc.text('Selected Swatches (Continued)', pageWidth / 2, margin, { align: 'center' });
+    // 决定布局策略 - 优先尝试将所有内容放在一页中
+    let currentPage = 1;
+    let totalPages;
+    let useCompactLayout = false;
+    
+    // 检查是否所有内容能放在一页中
+    if (imageContentHeight + summaryHeight <= pageHeight - margin * 3) {
+        totalPages = 1;
+        useCompactLayout = true;
+    } else {
+        // 检查图片是否需要多页
+        const imagePages = Math.ceil(imageContentHeight / (pageHeight - margin * 3));
+        // 检查摘要是否需要单独一页
+        const needSeparateSummaryPage = summaryHeight > pageHeight - margin * 3 - 30 || imagePages > 0;
+        totalPages = imagePages + (needSeparateSummaryPage ? 1 : 0);
+        
+        // 如果总页数仍为1，启用紧凑布局
+        if (totalPages === 1) {
+            useCompactLayout = true;
+        }
+    }
+    
+    // 开始生成PDF页面
+    // 添加标题
+    doc.setFontSize(16);
+    doc.text('Selected Swatches', pageWidth / 2, margin, { align: 'center' });
+    
+    // 绘制所有图片及其名称
+    let y = margin * 2.5;
+    let x = margin;
+    let rowCount = 0;
+    
+    imageResults.forEach((item, index) => {
+        // 计算行索引
+        if (index > 0 && index % itemsPerRow === 0) {
+            rowCount++;
+            x = margin;
+            y += itemHeight;
+            
+            // 检查是否需要分页
+            if (!useCompactLayout && y + itemHeight > pageHeight - margin * 3) {
+                // 添加页码
+                addPageNumber(doc, currentPage, totalPages, pageWidth, pageHeight);
+                
+                // 创建新页面
+                doc.addPage();
+                currentPage++;
+                y = margin * 2.5;
+                doc.setFontSize(16);
+                doc.text('Selected Swatches (Continued)', pageWidth / 2, margin, { align: 'center' });
+            }
         }
         
-        const items = pageGroups[pageIndex];
-        items.forEach(item => {
-            if (item.imgData) {
-                // 如果有图片数据，添加图片
-                doc.addImage(item.imgData, 'JPEG', item.x, item.y, imageWidth, imageHeight);
-            } else {
-                // 如果没有图片数据，添加文本提示
-                doc.setFontSize(8);
-                doc.text(`Error: ${item.name}`, item.x + imageWidth / 2, item.y + imageHeight / 2, { align: 'center' });
-            }
-            // 添加图片名称和数量
-            doc.setFontSize(8);
-            doc.text(`${item.name} (x${item.quantity})`, item.x + imageWidth / 2, item.y + imageHeight + textHeight - 2, { align: 'center' });
-        });
+        // 添加图片
+        if (item.imgData) {
+            doc.addImage(item.imgData, 'JPEG', x, y, imageWidth, imageHeight);
+        } else {
+            doc.setFontSize(10);
+            doc.text('Image Error', x + imageWidth / 2, y + imageHeight / 2, { align: 'center' });
+        }
+        
+        // 添加名称和数量 - 确保名称清晰显示
+        doc.setFontSize(9);  // 使用小一些的字体以确保适合宽度
+        doc.text(item.name, x + imageWidth / 2, y + imageHeight + 5, { align: 'center' });
+        doc.text(`x${item.quantity}`, x + imageWidth / 2, y + imageHeight + 9, { align: 'center' });
+        
+        x += imageWidth + itemSpacing;
     });
-
-    // 添加新页面用于汇总信息
-    doc.addPage();
-    y = margin;
     
-    // Summary Section
-    doc.setFontSize(12);
+    // 移动到摘要部分
+    y += itemHeight;
+    
+    // 检查是否需要为摘要添加新页面
+    if (!useCompactLayout && y + summaryHeight > pageHeight - margin * 3) {
+        // 添加页码
+        addPageNumber(doc, currentPage, totalPages, pageWidth, pageHeight);
+        
+        // 创建新页面
+        doc.addPage();
+        currentPage++;
+        y = margin * 2;
+    }
+    
+    // 摘要标题
+    doc.setFontSize(14);
     doc.text('Order Summary', margin, y);
-    y += textHeight * 1.5;
+    y += textHeight;
+    
+    // 添加分隔线
     doc.setLineWidth(0.5);
-    doc.line(margin, y, pageWidth - margin, y); // Horizontal line
-    y += textHeight * 1.5;
-
+    doc.line(margin, y, pageWidth - margin, y);
+    y += textHeight;
+    
+    // 列出所有项目
     doc.setFontSize(10);
     summaryItems.forEach(item => {
-        if (y + textHeight > pageHeight - margin * 2) { // Check for page break within summary
-             doc.addPage();
-             y = margin;
-             doc.setFontSize(12);
-             doc.text('Order Summary (Continued)', margin, y);
-             y += textHeight * 1.5;
-             doc.setLineWidth(0.5);
-             doc.line(margin, y, pageWidth - margin, y);
-             y += textHeight * 1.5;
-             doc.setFontSize(10);
+        // 检查是否需要新页面
+        if (y + textHeight > pageHeight - margin * 3) {
+            // 添加页码
+            addPageNumber(doc, currentPage, totalPages, pageWidth, pageHeight);
+            
+            // 创建新页面
+            doc.addPage();
+            currentPage++;
+            totalPages++; // 意外情况下增加总页数
+            y = margin * 2;
+            
+            // 继续摘要标题
+            doc.setFontSize(14);
+            doc.text('Order Summary (Continued)', margin, y);
+            y += textHeight;
+            doc.setLineWidth(0.5);
+            doc.line(margin, y, pageWidth - margin, y);
+            y += textHeight;
+            doc.setFontSize(10);
         }
+        
+        // 确保名称和数量都清晰显示
         doc.text(`${item.name}: ${item.quantity}`, margin + 5, y);
         y += textHeight;
     });
-
+    
+    // 总计分隔线
     y += textHeight / 2;
     doc.setLineWidth(0.2);
-    doc.line(margin, y, pageWidth - margin, y); // Horizontal line
-    y += textHeight * 1.5;
-
+    doc.line(margin, y, pageWidth - margin, y);
+    y += textHeight;
+    
+    // 总计数量
     doc.setFontSize(12);
     doc.text(`Total Quantity: ${totalQuantity}`, margin + 5, y);
-
-    // Footer with Beijing Time
+    
+    // 添加北京时间日期
     const dateTimeString = getBeijingDateTimeString();
     doc.setFontSize(8);
     doc.text(dateTimeString, pageWidth - margin, pageHeight - margin, { align: 'right' });
-
+    
+    // 添加页码到最后一页
+    addPageNumber(doc, currentPage, totalPages, pageWidth, pageHeight);
+    
+    // 保存PDF
     doc.save('selected_swatches.pdf');
 }
 
-// 改进的图片加载函数，增加错误处理和重试逻辑
+// 添加页码的辅助函数
+function addPageNumber(doc, currentPage, totalPages, pageWidth, pageHeight) {
+    doc.setFontSize(10);
+    doc.text(`${currentPage}/${totalPages}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+}
+
+// Function to load image data
 function loadImageData(src) {
     return new Promise((resolve, reject) => {
         const img = new Image();
-        
-        // 尝试不设置跨域属性
         img.onload = () => {
-            try {
-                const canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
-                
-                const dataURL = canvas.toDataURL('image/jpeg');
-                resolve(dataURL);
-            } catch (e) {
-                console.error("Canvas error:", e);
-                // 如果出错，尝试直接返回图片元素
-                if (typeof img.src === 'string' && img.src.startsWith('data:')) {
-                    resolve(img.src);
-                } else {
-                    reject(e);
-                }
-            }
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            const dataURL = canvas.toDataURL('image/jpeg');
+            resolve(dataURL);
         };
-        
-        img.onerror = () => {
-            // 如果加载失败，尝试改用绝对路径（如果在GitHub Pages上）
-            if (window.location.href.includes('github.io') && !src.startsWith('http')) {
-                const repoName = window.location.pathname.split('/')[1] || '';
-                const basePath = window.location.origin + '/' + repoName;
-                const newSrc = basePath + '/' + src;
-                
-                console.log(`Trying absolute path: ${newSrc}`);
-                
-                const retryImg = new Image();
-                retryImg.crossOrigin = "Anonymous";
-                retryImg.onload = () => {
-                    try {
-                        const canvas = document.createElement('canvas');
-                        canvas.width = retryImg.width;
-                        canvas.height = retryImg.height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(retryImg, 0, 0);
-                        resolve(canvas.toDataURL('image/jpeg'));
-                    } catch (e) {
-                        reject(e);
-                    }
-                };
-                retryImg.onerror = reject;
-                retryImg.src = newSrc;
-            } else {
-                reject(new Error(`Failed to load image: ${src}`));
-            }
-        };
-        
+        img.onerror = reject;
         img.src = src;
     });
 }
 
-// --- Event Listeners ---
-document.addEventListener('DOMContentLoaded', () => {
-    // Populate the menu with swatches
-    populateMenu();
-    // Update placeholder visibility based on whether items are selected
-    updatePlaceholderVisibility(); 
+// Function to handle remove or decrement
+function handleRemoveOrDecrement(swatchElement) {
+    const currentCount = parseInt(swatchElement.dataset.count || '1', 10);
+    if (currentCount > 1) {
+        // Decrement count
+        swatchElement.dataset.count = currentCount - 1;
+        const countSpan = swatchElement.querySelector('.swatch-count');
+        if (countSpan) {
+            countSpan.textContent = `x${currentCount - 1}`;
+        }
+    } else {
+        // Remove the swatch
+        swatchElement.remove();
+        updatePlaceholderVisibility();
+    }
+}
 
-    // Initialize SortableJS for the selected swatches container
-    if (typeof Sortable !== 'undefined') {
+// Event listeners
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize SortableJS
+    if (window.Sortable) {
         new Sortable(selectedSwatchesContainer, {
-            animation: 250, 
-            ghostClass: 'sortable-ghost', 
-            dragClass: 'sortable-drag', 
-            forceFallback: true, 
-            fallbackOnBody: true, 
-            swapThreshold: 0.65, 
-            filter: '.remove-swatch-btn', 
-            preventOnFilter: true, 
-            chosenClass: 'sortable-chosen', 
-            onMove: function (evt) {
-                const related = evt.related;
-                if (related) {
-                    related.style.transition = 'transform 0.2s ease';
-                    if (evt.to === evt.from) {
-                        if (evt.oldIndex < evt.newIndex) {
-                            related.style.transform = 'translateX(100%)';
-                        } else {
-                            related.style.transform = 'translateX(-100%)';
-                        }
-                    }
-                }
-            },
-            onEnd: function (evt) {
-                const related = evt.related;
-                if (related) {
-                    related.style.transition = '';
-                    related.style.transform = '';
-                }
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            onEnd: () => {
+                // Update instance IDs after sorting
+                const swatchItems = selectedSwatchesContainer.querySelectorAll('.swatch-item');
+                swatchItems.forEach((item, index) => {
+                    item.dataset.instanceId = generateInstanceId();
+                });
             }
         });
     } else {
-        console.error("Sortable library is not loaded!");
+        console.error('SortableJS library not loaded.');
     }
 
-    // Add mouse wheel zoom functionality to modal image
-    if (modalImage) { // Ensure modalImage exists
-        modalImage.addEventListener('wheel', (event) => {
-            event.preventDefault(); 
-            if (!imageModal.classList.contains('show')) {
-                return;
-            }
-            const delta = Math.sign(event.deltaY); 
-            const currentScaleMatch = modalImage.style.transform.match(/scale\(([0-9\.]+)\)/);
-            const currentScale = currentScaleMatch ? parseFloat(currentScaleMatch[1]) : 1;
-            let newScale = currentScale;
-            const zoomStep = 0.1; 
-            const maxScale = 5; 
-            const minScale = 0.5; 
-            if (delta < 0) {
-                newScale = Math.min(maxScale, currentScale + zoomStep);
-            } else {
-                newScale = Math.max(minScale, currentScale - zoomStep);
-            }
-            modalImage.style.transformOrigin = 'center center';
-            modalImage.style.transform = `scale(${newScale})`;
-        });
-    }
+    // Initialize other event listeners
+    modalImage.addEventListener('wheel', (event) => {
+        event.preventDefault();
+        const currentScale = parseFloat(modalImage.style.transform.match(/scale\(([0-9.]+)\)/)[1]) || 1;
+        const delta = event.deltaY > 0 ? -0.1 : 0.1;
+        const newScale = Math.min(Math.max(currentScale + delta, 1), 3);
+        modalImage.style.transform = `scale(${newScale})`;
+    }, { passive: false });
 
-    // Sidebar controls
-    if (toggleAllBtn) {
-        toggleAllBtn.addEventListener('click', toggleAllCategories);
-    }
+    toggleAllBtn.addEventListener('click', toggleAllCategories);
+    closeModalBtn.addEventListener('click', closeImageModal);
+    imageModal.addEventListener('click', closeImageModal);
 
-    // Modal close listeners
-    if (closeModalBtn) {
-        closeModalBtn.addEventListener('click', closeImageModal);
-    }
-    if (imageModal) {
-        imageModal.addEventListener('click', (event) => {
-            if (event.target === imageModal) {
-                closeImageModal();
-            }
-        });
-    }
+    selectedSwatchesContainer.addEventListener('touchstart', (event) => {
+        touchStartTime = event.timeStamp;
+    }, { passive: true });
 
-    // Helper function to handle remove or decrement logic
-    function handleRemoveOrDecrement(swatchItemToModify) {
-        let currentCount = parseInt(swatchItemToModify.dataset.count || '1', 10);
-        if (currentCount > 1) {
-            currentCount--;
-            swatchItemToModify.dataset.count = currentCount;
-            const countSpan = swatchItemToModify.querySelector('.swatch-count');
-            if (countSpan) {
-                countSpan.textContent = `x${currentCount}`;
+    selectedSwatchesContainer.addEventListener('touchend', (event) => {
+        const touchEndTime = event.timeStamp;
+        const touchDuration = touchEndTime - touchStartTime;
+
+        if (touchDuration < 300) {
+            const clickedElement = event.target.closest('.swatch-item');
+            if (clickedElement) {
+                openImageModal(clickedElement);
             }
-            swatchItemToModify.classList.add('shrink');
-            setTimeout(() => {
-                swatchItemToModify.classList.remove('shrink');
-            }, 300);
-        } else {
-            swatchItemToModify.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-            swatchItemToModify.style.opacity = '0';
-            swatchItemToModify.style.transform = 'scale(0.8)';
-            setTimeout(() => {
-                swatchItemToModify.remove();
-                updatePlaceholderVisibility();
-            }, 300);
         }
-    }
+    }, { passive: true });
 
-    // Event listeners for selectedSwatchesContainer
-    if (selectedSwatchesContainer) {
-        selectedSwatchesContainer.addEventListener('touchstart', (event) => {
-            touchStartTime = Date.now();
-        }, { passive: true }); // Use passive listener for touchstart for performance
+    selectedSwatchesContainer.addEventListener('click', (event) => {
+        const clickedElement = event.target.closest('.swatch-item');
+        if (clickedElement) {
+            handleRemoveOrDecrement(clickedElement);
+        }
+    });
 
-        selectedSwatchesContainer.addEventListener('touchend', (event) => {
-            const touchDuration = Date.now() - touchStartTime;
-            if (touchDuration < 300) { 
-                const target = event.changedTouches[0].target;
-                const removeButton = target.closest('.remove-swatch-btn');
-                if (removeButton) {
-                    event.preventDefault(); // Prevent click if it's a swipe on button
-                    event.stopPropagation();
-                    const swatchItemToModify = removeButton.closest('.swatch-item');
-                    if (swatchItemToModify) {
-                        handleRemoveOrDecrement(swatchItemToModify);
-                    }
-                    return;
-                }
-                const clickedImage = target.closest('img');
-                const swatchItem = target.closest('.swatch-item');
-                if (clickedImage && swatchItem && selectedSwatchesContainer.contains(swatchItem)) {
-                     event.preventDefault(); // Prevent default browser action on image tap (like selection or context menu)
-                    openImageModal(swatchItem);
-                }
-            }
-        });
-    
-        selectedSwatchesContainer.addEventListener('click', (event) => {
-            const target = event.target;
-            const removeButton = target.closest('.remove-swatch-btn');
-            if (removeButton) {
-                event.stopPropagation(); 
-                const swatchItemToModify = removeButton.closest('.swatch-item');
-                if (swatchItemToModify) {
-                    handleRemoveOrDecrement(swatchItemToModify);
-                }
-                return; 
-            }
-            const clickedImage = target.closest('img');
-            const swatchItem = target.closest('.swatch-item'); 
-            if (clickedImage && swatchItem && selectedSwatchesContainer.contains(swatchItem)) {
-                openImageModal(swatchItem); 
-            }
-        });
-    }
+    exportPdfBtn.addEventListener('click', exportToPdf);
 
-    // Add event listener for the export PDF button
-    if (exportPdfBtn) {
-        exportPdfBtn.addEventListener('click', exportToPdf);
-    }
+    // Populate menu and update placeholder visibility
+    populateMenu();
+    updatePlaceholderVisibility();
 });
