@@ -422,37 +422,6 @@ function closeImageModal() {
     }, 300); // Match CSS animation duration
 }
 
-// Add mouse wheel zoom functionality to modal image
-modalImage.addEventListener('wheel', (event) => {
-    event.preventDefault(); // Prevent default scroll behavior
-
-    // Only zoom if modal is open
-    if (!imageModal.classList.contains('show')) {
-        return;
-    }
-
-    const delta = Math.sign(event.deltaY); // -1 for scroll up (zoom in), 1 for scroll down (zoom out)
-    const currentScale = parseFloat(modalImage.style.transform.replace('scale(', '').split(')')[0]) || 1;
-    let newScale = currentScale;
-
-    const zoomStep = 0.1; // How much to zoom per step
-    const maxScale = 5; // Maximum zoom level
-    const minScale = 0.5; // Minimum zoom level
-
-    if (delta < 0) {
-        // Zoom in
-        newScale = Math.min(maxScale, currentScale + zoomStep);
-    } else {
-        // Zoom out
-        newScale = Math.max(minScale, currentScale - zoomStep);
-    }
-
-    // Optional: Zoom towards mouse cursor (more complex)
-    // For simplicity, let's just zoom from the center for now
-    modalImage.style.transformOrigin = 'center center';
-    modalImage.style.transform = `scale(${newScale})`;
-});
-
 // Function to get Beijing Time as a string
 function getBeijingDateTimeString() {
     const now = new Date();
@@ -627,145 +596,166 @@ function loadImageData(src) {
 }
 
 // --- Event Listeners ---
-// Sidebar controls
-toggleAllBtn.addEventListener('click', toggleAllCategories); 
-
-// Modal close listeners
-closeModalBtn.addEventListener('click', closeImageModal);
-imageModal.addEventListener('click', (event) => {
-    // Close if clicked on the background (modal itself), not the image
-    if (event.target === imageModal) {
-        closeImageModal();
-    }
-});
-
-// 新增：触摸开始事件监听器
-selectedSwatchesContainer.addEventListener('touchstart', (event) => {
-    touchStartTime = Date.now();
-});
-// 新增：触摸结束事件监听器
-selectedSwatchesContainer.addEventListener('touchend', (event) => {
-    const touchDuration = Date.now() - touchStartTime;
-    if (touchDuration < 300) { // 如果触摸持续时间小于 300 毫秒，认为是点击事件
-        const target = event.changedTouches[0].target;
-        // Check if the remove button was clicked
-        if (target.classList.contains('remove-swatch-btn')) {
-            event.stopPropagation(); // Prevent modal from opening
-            const swatchItemToRemove = target.closest('.swatch-item');
-            if (swatchItemToRemove) {
-                // Optional: Add a fade-out effect before removing
-                swatchItemToRemove.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-                swatchItemToRemove.style.opacity = '0';
-                swatchItemToRemove.style.transform = 'scale(0.8)';
-                setTimeout(() => {
-                    swatchItemToRemove.remove();
-                    updatePlaceholderVisibility(); // Update placeholder after removal
-                    // If SortableJS instance needs update (e.g., re-calculating indices), do it here
-                }, 300); // Delay removal until after animation
-            }
-            return; // Stop further processing for this click
-        }
-
-        // Check if an image within a selected swatch was clicked for zoom
-        const clickedImage = target.closest('img');
-        const swatchItem = target.closest('.swatch-item'); // Ensure click is within a swatch item
-
-        if (clickedImage && swatchItem) {
-            openImageModal(swatchItem); // Pass the swatch item to openImageModal
-        }
-    }
-});
-    
-// Event delegation for selectedSwatchesContainer (handles image zoom and remove button)
-selectedSwatchesContainer.addEventListener('click', (event) => {
-    const target = event.target;
-
-    // Check if the remove button was clicked
-    if (target.classList.contains('remove-swatch-btn')) {
-        event.stopPropagation(); // Prevent modal from opening
-        const swatchItemToModify = target.closest('.swatch-item');
-        if (swatchItemToModify) {
-            let currentCount = parseInt(swatchItemToModify.dataset.count || '1', 10);
-
-            if (currentCount > 1) {
-                // Decrement count
-                currentCount--;
-                swatchItemToModify.dataset.count = currentCount;
-                const countSpan = swatchItemToModify.querySelector('.swatch-count');
-                if (countSpan) {
-                    countSpan.textContent = `x${currentCount}`;
-                }
-                 // Optional: Add a visual feedback
-                 swatchItemToModify.classList.add('shrink');
-                 setTimeout(() => {
-                     swatchItemToModify.classList.remove('shrink');
-                 }, 300);
-
-            } else {
-                // Count is 1 or less, remove the element
-                 // Optional: Add a fade-out effect before removing
-                swatchItemToModify.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-                swatchItemToModify.style.opacity = '0';
-                swatchItemToModify.style.transform = 'scale(0.8)';
-                setTimeout(() => {
-                    swatchItemToModify.remove();
-                    updatePlaceholderVisibility(); // Update placeholder after removal
-                    // If SortableJS instance needs update (e.g., re-calculating indices), do it here
-                }, 300); // Delay removal until after animation
-            }
-        }
-        return; // Stop further processing for this click
-    }
-
-    // Check if an image within a selected swatch was clicked for zoom
-    const clickedImage = target.closest('img');
-    const swatchItem = target.closest('.swatch-item'); // Ensure click is within a swatch item
-
-    if (clickedImage && swatchItem) {
-        openImageModal(swatchItem); // Pass the swatch item to openImageModal
-    }
-});
-
-// Add event listener for the export PDF button
-if (exportPdfBtn) {
-    exportPdfBtn.addEventListener('click', exportToPdf);
-}
+// MOVED TO DOMContentLoaded
 
 // --- Initialization ---
-populateMenu();
-updatePlaceholderVisibility(); // Initial check
+// MOVED TO DOMContentLoaded
 
-// Initialize SortableJS
-new Sortable(selectedSwatchesContainer, {
-    animation: 250, // Animation speed in ms
-    ghostClass: 'sortable-ghost', // Class name for the drop placeholder
-    dragClass: 'sortable-drag', // Class name for the dragging item
-    forceFallback: true, // Ensures smooth dragging across containers if needed later
-    fallbackOnBody: true, // Attach clone to body to avoid clipping issues
-    swapThreshold: 0.65, // Threshold for swapping items
-    filter: '.remove-swatch-btn', // Ignore clicks on remove button for starting drag
-    preventOnFilter: true, // Prevent default action (like drag start) on filtered elements
-    chosenClass: 'sortable-chosen', // 添加 chosenClass
-    onMove: function (evt) {
-        // 在拖动过程中触发，优化占位元素的视觉效果
-        const related = evt.related;
-        if (related) {
-            related.style.transition = 'transform 0.2s ease';
-            if (evt.to === evt.from) {
-                if (evt.oldIndex < evt.newIndex) {
-                    related.style.transform = 'translateX(100%)';
-                } else {
-                    related.style.transform = 'translateX(-100%)';
+document.addEventListener('DOMContentLoaded', () => {
+    // Populate the menu with swatches
+    populateMenu();
+    // Update placeholder visibility based on whether items are selected
+    updatePlaceholderVisibility(); 
+
+    // Initialize SortableJS for the selected swatches container
+    new Sortable(selectedSwatchesContainer, {
+        animation: 250, 
+        ghostClass: 'sortable-ghost', 
+        dragClass: 'sortable-drag', 
+        forceFallback: true, 
+        fallbackOnBody: true, 
+        swapThreshold: 0.65, 
+        filter: '.remove-swatch-btn', 
+        preventOnFilter: true, 
+        chosenClass: 'sortable-chosen', 
+        onMove: function (evt) {
+            const related = evt.related;
+            if (related) {
+                related.style.transition = 'transform 0.2s ease';
+                if (evt.to === evt.from) {
+                    if (evt.oldIndex < evt.newIndex) {
+                        related.style.transform = 'translateX(100%)';
+                    } else {
+                        related.style.transform = 'translateX(-100%)';
+                    }
                 }
             }
+        },
+        onEnd: function (evt) {
+            const related = evt.related;
+            if (related) {
+                related.style.transition = '';
+                related.style.transform = '';
+            }
         }
-    },
-    onEnd: function (evt) {
-        // 拖动结束后，恢复占位元素的样式
-        const related = evt.related;
-        if (related) {
-            related.style.transition = '';
-            related.style.transform = '';
+    });
+
+    // Add mouse wheel zoom functionality to modal image
+    if (modalImage) { // Ensure modalImage exists
+        modalImage.addEventListener('wheel', (event) => {
+            event.preventDefault(); 
+            if (!imageModal.classList.contains('show')) {
+                return;
+            }
+            const delta = Math.sign(event.deltaY); 
+            const currentScaleMatch = modalImage.style.transform.match(/scale\(([0-9\.]+)\)/);
+            const currentScale = currentScaleMatch ? parseFloat(currentScaleMatch[1]) : 1;
+            let newScale = currentScale;
+            const zoomStep = 0.1; 
+            const maxScale = 5; 
+            const minScale = 0.5; 
+            if (delta < 0) {
+                newScale = Math.min(maxScale, currentScale + zoomStep);
+            } else {
+                newScale = Math.max(minScale, currentScale - zoomStep);
+            }
+            modalImage.style.transformOrigin = 'center center';
+            modalImage.style.transform = `scale(${newScale})`;
+        });
+    }
+
+    // Sidebar controls
+    if (toggleAllBtn) {
+        toggleAllBtn.addEventListener('click', toggleAllCategories);
+    }
+
+    // Modal close listeners
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', closeImageModal);
+    }
+    if (imageModal) {
+        imageModal.addEventListener('click', (event) => {
+            if (event.target === imageModal) {
+                closeImageModal();
+            }
+        });
+    }
+
+    // Helper function to handle remove or decrement logic
+    function handleRemoveOrDecrement(swatchItemToModify) {
+        let currentCount = parseInt(swatchItemToModify.dataset.count || '1', 10);
+        if (currentCount > 1) {
+            currentCount--;
+            swatchItemToModify.dataset.count = currentCount;
+            const countSpan = swatchItemToModify.querySelector('.swatch-count');
+            if (countSpan) {
+                countSpan.textContent = `x${currentCount}`;
+            }
+            swatchItemToModify.classList.add('shrink');
+            setTimeout(() => {
+                swatchItemToModify.classList.remove('shrink');
+            }, 300);
+        } else {
+            swatchItemToModify.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            swatchItemToModify.style.opacity = '0';
+            swatchItemToModify.style.transform = 'scale(0.8)';
+            setTimeout(() => {
+                swatchItemToModify.remove();
+                updatePlaceholderVisibility();
+            }, 300);
         }
+    }
+
+    // Event listeners for selectedSwatchesContainer
+    if (selectedSwatchesContainer) {
+        selectedSwatchesContainer.addEventListener('touchstart', (event) => {
+            touchStartTime = Date.now();
+        }, { passive: true }); // Use passive listener for touchstart for performance
+
+        selectedSwatchesContainer.addEventListener('touchend', (event) => {
+            const touchDuration = Date.now() - touchStartTime;
+            if (touchDuration < 300) { 
+                const target = event.changedTouches[0].target;
+                const removeButton = target.closest('.remove-swatch-btn');
+                if (removeButton) {
+                    event.preventDefault(); // Prevent click if it's a swipe on button
+                    event.stopPropagation();
+                    const swatchItemToModify = removeButton.closest('.swatch-item');
+                    if (swatchItemToModify) {
+                        handleRemoveOrDecrement(swatchItemToModify);
+                    }
+                    return;
+                }
+                const clickedImage = target.closest('img');
+                const swatchItem = target.closest('.swatch-item');
+                if (clickedImage && swatchItem && selectedSwatchesContainer.contains(swatchItem)) {
+                     event.preventDefault(); // Prevent default browser action on image tap (like selection or context menu)
+                    openImageModal(swatchItem);
+                }
+            }
+        });
+    
+        selectedSwatchesContainer.addEventListener('click', (event) => {
+            const target = event.target;
+            const removeButton = target.closest('.remove-swatch-btn');
+            if (removeButton) {
+                event.stopPropagation(); 
+                const swatchItemToModify = removeButton.closest('.swatch-item');
+                if (swatchItemToModify) {
+                    handleRemoveOrDecrement(swatchItemToModify);
+                }
+                return; 
+            }
+            const clickedImage = target.closest('img');
+            const swatchItem = target.closest('.swatch-item'); 
+            if (clickedImage && swatchItem && selectedSwatchesContainer.contains(swatchItem)) {
+                openImageModal(swatchItem); 
+            }
+        });
+    }
+
+    // Add event listener for the export PDF button
+    if (exportPdfBtn) {
+        exportPdfBtn.addEventListener('click', exportToPdf);
     }
 });
