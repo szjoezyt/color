@@ -718,7 +718,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     toggleAllBtn.addEventListener('click', toggleAllCategories);
     closeModalBtn.addEventListener('click', closeImageModal);
-    imageModal.addEventListener('click', closeImageModal);
+    imageModal.addEventListener('click', (event) => {
+        // 只有当点击的是模态窗口背景（而不是图片）时才关闭
+        if (event.target === imageModal) {
+            closeImageModal();
+        }
+    });
 
     selectedSwatchesContainer.addEventListener('touchstart', (event) => {
         touchStartTime = event.timeStamp;
@@ -728,18 +733,52 @@ document.addEventListener('DOMContentLoaded', () => {
         const touchEndTime = event.timeStamp;
         const touchDuration = touchEndTime - touchStartTime;
 
-        if (touchDuration < 300) {
-            const clickedElement = event.target.closest('.swatch-item');
-            if (clickedElement) {
-                openImageModal(clickedElement);
+        if (touchDuration < 300) { // 短时间触摸视为点击
+            // 检查是否触摸的是删除按钮
+            const target = event.changedTouches[0].target;
+            const removeButton = target.closest('.remove-swatch-btn');
+            
+            if (removeButton) {
+                // 如果触摸的是删除按钮，则执行删除/减少数量的操作
+                event.preventDefault(); // 防止默认行为
+                const swatchElement = removeButton.closest('.swatch-item');
+                if (swatchElement) {
+                    handleRemoveOrDecrement(swatchElement);
+                }
+                return;
+            }
+            
+            // 检查是否触摸的是图片或色板项
+            const swatchItem = target.closest('.swatch-item');
+            const touchedImage = target.tagName === 'IMG';
+            
+            // 如果是触摸图片或色板项（而不是删除按钮），则打开图片模态窗口
+            if (swatchItem && (touchedImage || target.classList.contains('swatch-name'))) {
+                event.preventDefault(); // 防止默认行为（如选择文本）
+                openImageModal(swatchItem);
             }
         }
-    }, { passive: true });
+    }, { passive: false }); // 改为非被动，因为我们需要调用preventDefault
 
     selectedSwatchesContainer.addEventListener('click', (event) => {
-        const clickedElement = event.target.closest('.swatch-item');
-        if (clickedElement) {
-            handleRemoveOrDecrement(clickedElement);
+        // 检查是否点击的是删除按钮
+        const removeButton = event.target.closest('.remove-swatch-btn');
+        if (removeButton) {
+            // 如果点击的是删除按钮，则执行删除/减少数量的操作
+            const swatchElement = removeButton.closest('.swatch-item');
+            if (swatchElement) {
+                handleRemoveOrDecrement(swatchElement);
+            }
+            return; // 防止触发图片查看功能
+        }
+        
+        // 检查是否点击的是图片或色板项
+        const swatchItem = event.target.closest('.swatch-item');
+        const clickedImage = event.target.tagName === 'IMG';
+        
+        // 如果是点击图片或色板项（而不是删除按钮），则打开图片模态窗口
+        if (swatchItem && (clickedImage || event.target.classList.contains('swatch-name'))) {
+            openImageModal(swatchItem);
         }
     });
 
