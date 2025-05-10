@@ -274,6 +274,7 @@ function populateMenu() {
         details.appendChild(swatchList);
         categoryMenu.appendChild(details);
     });
+    updateSelectionStats();
 }
 
 // Function to handle swatch click (from menu)
@@ -303,8 +304,6 @@ function handleSwatchClick(swatch, originalElement) {
              existingSwatch.classList.remove('pulse');
          }, 300);
 
-
-
     } else {
         // Swatch does not exist, add it
         const category = categories.find(cat => cat.id === swatch.categoryId);
@@ -317,6 +316,7 @@ function handleSwatchClick(swatch, originalElement) {
         const swatchToAdd = { ...swatch, categoryId: category.id }; // Clone swatch data and add categoryId
         animateSwatchToSelection(swatchToAdd, originalElement);
     }
+    updateSelectionStats();
 }
 
 // Function to animate the swatch to the selection area
@@ -371,6 +371,7 @@ function animateSwatchToSelection(swatch, originalElement) {
            animationClone.style.transition = 'none';
         }, animDuration);
     }, 100); // Slightly increased delay to let animation progress more
+    updateSelectionStats();
 }
 
 // Function to update placeholder visibility
@@ -380,6 +381,7 @@ function updatePlaceholderVisibility() {
     } else {
         selectionPlaceholder.style.display = 'block';
     }
+    updateSelectionStats();
 }
 
 // Function to Toggle All Categories (Replaces Expand/Collapse)
@@ -717,6 +719,7 @@ function handleRemoveOrDecrement(swatchElement) {
         swatchElement.remove();
         updatePlaceholderVisibility();
     }
+    updateSelectionStats();
 }
 
 // Event listeners
@@ -732,6 +735,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 swatchItems.forEach((item, index) => {
                     item.dataset.instanceId = generateInstanceId();
                 });
+                updateSelectionStats();
             }
         });
     } else {
