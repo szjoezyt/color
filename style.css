@@ -163,7 +163,7 @@ body {
     border-bottom: 1px solid var(--border-color);
     padding-bottom: 8px;
     text-align: center;
-    width: 80%;
+    width: 100%;
     margin-left: auto;
     margin-right: auto;
 }
