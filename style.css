@@ -24,6 +24,7 @@ body {
 .container {
     display: flex;
     min-height: 100vh;
+    padding-bottom: 60px; /* 预留footer高度，避免被遮挡 */
 }
 
 .sidebar {
@@ -154,6 +155,7 @@ body {
     overflow-y: auto; /* Allow scrolling if content overflows vertically */
     height: 100vh; /* Limit height to viewport height */
     box-sizing: border-box; /* Include padding in height calculation */
+    padding-bottom: 60px; /* 预留footer高度，避免被遮挡 */
 }
 
 .selection-area h2 {
