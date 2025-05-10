@@ -783,6 +783,49 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             
+            // 检查是否触摸的是数量区域
+            if (target.classList && target.classList.contains('swatch-count')) {
+                const swatchItem = target.closest('.swatch-item');
+                if (!swatchItem) return;
+
+                // 防止重复插入input
+                if (swatchItem.querySelector('.swatch-count-input')) return;
+
+                const currentCount = parseInt(swatchItem.dataset.count || '1', 10);
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.min = '1';
+                input.value = currentCount;
+                input.className = 'swatch-count-input';
+
+                // 替换span为input
+                target.style.display = 'none';
+                swatchItem.appendChild(input);
+                input.focus();
+                input.select();
+
+                function finishInput() {
+                    let newCount = parseInt(input.value, 10);
+                    if (isNaN(newCount) || newCount < 1) newCount = 1;
+                    swatchItem.dataset.count = newCount;
+                    target.textContent = `x${newCount}`;
+                    target.style.display = '';
+                    input.remove();
+                    updateSelectionStats();
+                }
+
+                input.addEventListener('blur', finishInput);
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        finishInput();
+                    }
+                });
+
+                event.stopPropagation();
+                event.preventDefault();
+                return;
+            }
+            
             // 检查是否触摸的是图片或色板项
             const swatchItem = target.closest('.swatch-item');
             const touchedImage = target.tagName === 'IMG';
@@ -793,7 +836,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 openImageModal(swatchItem);
             }
         }
-    }, { passive: false }); // 改为非被动，因为我们需要调用preventDefault
+    }, { passive: false });
 
     selectedSwatchesContainer.addEventListener('click', (event) => {
         // 优先处理数量输入
