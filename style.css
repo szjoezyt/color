@@ -161,7 +161,7 @@ body {
     color: var(--primary-accent);
     font-weight: 400;
     border-bottom: 1px solid var(--border-color);
-    padding-bottom: 8px;
+    padding-bottom: 10px;
     text-align: center;
     width: 100%;
     margin-left: auto;
@@ -434,4 +434,15 @@ body {
         font-size: 0.95em;
         margin-top: 0;
     }
+}
+
+.swatch-count-input {
+    width: 36px;
+    font-size: 0.9em;
+    text-align: center;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 2px 4px;
+    margin-left: 2px;
+    margin-right: 2px;
 }
