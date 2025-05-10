@@ -654,6 +654,9 @@ async function exportToPdf() {
     doc.line(margin, y, pageWidth - margin, y);
     y += textHeight;
     
+    // 计算平方英尺
+    const totalAreaFt2 = totalArea * 10.7639;
+
     // 总计数量
     doc.setFontSize(12);
     doc.text(`Total Quantity: ${totalQuantity}`, margin + 5, y);
@@ -661,7 +664,7 @@ async function exportToPdf() {
 
     // 新增：总面积统计
     doc.setFontSize(12);
-    doc.text(`Total Area: ${totalArea.toFixed(3)}㎡`, margin + 5, y);
+    doc.text(`Total Area: ${totalArea.toFixed(3)} m^2 / ${totalAreaFt2.toFixed(3)} ft^2`, margin + 5, y);
     
     // 添加北京时间日期
     const dateTimeString = getBeijingDateTimeString();
