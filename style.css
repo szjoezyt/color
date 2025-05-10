@@ -176,10 +176,10 @@ body {
     text-align: center;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     background-color: #fff; /* Ensure background for items */
-    display: flex; /* Use flex for layout */
+    display: flex;
     flex-direction: column;
-    height: 110px; /* Fixed height for consistency in menu */
-    position: relative; /* Needed for potential absolute positioning inside */
+    height: 130px;
+    position: relative;
 }
 
 .swatch-item:hover {
@@ -189,10 +189,18 @@ body {
 }
 
 .swatch-item img {
+    height: 90px; /* 保证图片下方有空间显示名字 */
+    object-fit: cover;
     width: 100%;
-    height: 75px; /* Fixed image height in menu */
-    object-fit: cover; /* Cover the area */
-    display: block;
+}
+
+.swatch-item .swatch-name {
+    flex-shrink: 0;
+    background: #f9f9f9;
+    font-size: 0.8em;
+    padding: 5px 0;
+    text-align: center;
+    z-index: 1;
 }
 
 .swatch-item span {
@@ -268,11 +276,20 @@ body {
 
 /* Style for the count display on selected items */
 #selected-swatches .swatch-count {
+    position: absolute;
+    bottom: 3px;
+    right: 3px;
     pointer-events: auto !important;
     cursor: pointer !important;
     z-index: 10 !important;
     background-color: rgba(0,0,0,0.7);
     color: #fff;
+    font-size: 0.7em;
+    padding: 2px 5px;
+    border-radius: 3px;
+    min-width: 15px;
+    text-align: center;
+    line-height: 1;
 }
 
 .swatch-count-input {
