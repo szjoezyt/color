@@ -616,6 +616,10 @@ async function exportToPdf() {
     
     // 列出所有项目
     doc.setFontSize(10);
+    let totalArea = 0;
+    summaryItems.forEach(item => {
+        totalArea += item.totalArea;
+    });
     summaryItems.forEach(item => {
         // 检查是否需要新页面
         if (y + textHeight > pageHeight - margin * 3) {
@@ -638,8 +642,9 @@ async function exportToPdf() {
             doc.setFontSize(10);
         }
         
-        // 确保名称和数量都清晰显示
-        doc.text(`${item.name}: ${item.quantity}`, margin + 5, y);
+        // 新增：显示面积，保留3位小数
+        const areaStr = item.area > 0 ? `（面积: ${(item.totalArea).toFixed(3)}㎡）` : '';
+        doc.text(`${item.name}: ${item.quantity}${areaStr}`, margin + 5, y);
         y += textHeight;
     });
     
@@ -652,6 +657,11 @@ async function exportToPdf() {
     // 总计数量
     doc.setFontSize(12);
     doc.text(`Total Quantity: ${totalQuantity}`, margin + 5, y);
+    y += textHeight;
+
+    // 新增：总面积统计
+    doc.setFontSize(12);
+    doc.text(`Total Area: ${totalArea.toFixed(3)}㎡`, margin + 5, y);
     
     // 添加北京时间日期
     const dateTimeString = getBeijingDateTimeString();
@@ -663,11 +673,6 @@ async function exportToPdf() {
     
     // 保存PDF
     doc.save('selected_swatches.pdf');
-
-    let totalArea = 0;
-    summaryItems.forEach(item => {
-        totalArea += item.totalArea;
-    });
 }
 
 // 添加页码的辅助函数
