@@ -796,6 +796,49 @@ document.addEventListener('DOMContentLoaded', () => {
     }, { passive: false }); // 改为非被动，因为我们需要调用preventDefault
 
     selectedSwatchesContainer.addEventListener('click', (event) => {
+        // 优先处理数量输入
+        if (event.target.classList.contains('swatch-count')) {
+            const swatchItem = event.target.closest('.swatch-item');
+            if (!swatchItem) return;
+
+            // 防止重复插入input
+            if (swatchItem.querySelector('.swatch-count-input')) return;
+
+            const currentCount = parseInt(swatchItem.dataset.count || '1', 10);
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.min = '1';
+            input.value = currentCount;
+            input.className = 'swatch-count-input';
+
+            // 替换span为input
+            event.target.style.display = 'none';
+            swatchItem.appendChild(input);
+            input.focus();
+            input.select();
+
+            function finishInput() {
+                let newCount = parseInt(input.value, 10);
+                if (isNaN(newCount) || newCount < 1) newCount = 1;
+                swatchItem.dataset.count = newCount;
+                event.target.textContent = `x${newCount}`;
+                event.target.style.display = '';
+                input.remove();
+                updateSelectionStats();
+            }
+
+            input.addEventListener('blur', finishInput);
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    finishInput();
+                }
+            });
+
+            // 阻止冒泡，防止触发图片放大
+            event.stopPropagation();
+            return;
+        }
+
         // 检查是否点击的是删除按钮
         const removeButton = event.target.closest('.remove-swatch-btn');
         if (removeButton) {
