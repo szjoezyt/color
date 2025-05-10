@@ -729,6 +729,8 @@ document.addEventListener('DOMContentLoaded', () => {
         new Sortable(selectedSwatchesContainer, {
             animation: 150,
             ghostClass: 'sortable-ghost',
+            filter: '.swatch-count, .swatch-count-input',
+            preventOnFilter: false,
             onEnd: () => {
                 // Update instance IDs after sorting
                 const swatchItems = selectedSwatchesContainer.querySelectorAll('.swatch-item');
