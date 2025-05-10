@@ -472,6 +472,20 @@ async function exportToPdf() {
         const imageSrc = swatchElement.dataset.image;
         const quantity = parseInt(swatchElement.dataset.count || '1', 10);
 
+        // ======= 这里插入面积解析和计算代码 =======
+        let area = 0;
+        for (const cat of categories) {
+            if (cat.swatches.some(s => s.id === swatchElement.dataset.id)) {
+                const size = parseSizeFromCategoryName(cat.name); // 解析分类名
+                if (size) {
+                    area = calcArea(size.width, size.length); // 只用宽和长
+                }
+                break;
+            }
+        }
+        const totalSwatchArea = area * quantity;
+        // ===========================================
+
         totalQuantity += quantity;
         summaryItems.push({ name: imageName, quantity: quantity });
 
@@ -789,20 +803,21 @@ document.addEventListener('DOMContentLoaded', () => {
     updatePlaceholderVisibility();
 });
 
- // 辅助函数：从分类名解析尺寸
-    function parseSizeFromCategoryName(categoryName) {
-        // 匹配类似 9*1220*2440mm
-        const match = categoryName.match(/(\\d+(?:\\.\\d+)?)\\*(\\d+(?:\\.\\d+)?)\\*(\\d+(?:\\.\\d+)?)/);
-        if (match) {
-            return {
-                thickness: parseFloat(match[1]),
-                width: parseFloat(match[2]),
-                length: parseFloat(match[3])
-            };
-        }
-        return null;
+// 辅助函数：从分类名解析尺寸
+function parseSizeFromCategoryName(categoryName) {
+    // 匹配类似 9*1220*2440mm
+    const match = categoryName.match(/(\\d+(?:\\.\\d+)?)\\*(\\d+(?:\\.\\d+)?)\\*(\\d+(?:\\.\\d+)?)/);
+    if (match) {
+        return {
+            thickness: parseFloat(match[1]),
+            width: parseFloat(match[2]),
+            length: parseFloat(match[3])
+        };
     }
-    // 辅助函数：计算面积（平方米）
-    function calcArea(width, length) {
-        return (width / 1000) * (length / 1000);
-    }
+    return null;
+}
+
+// 辅助函数：计算面积（平方米）
+function calcArea(width, length) {
+    return (width / 1000) * (length / 1000);
+}
