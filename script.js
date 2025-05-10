@@ -823,7 +823,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // 辅助函数：从分类名解析尺寸
 function parseSizeFromCategoryName(categoryName) {
     // 匹配类似 9*1220*2440mm
-    const match = categoryName.match(/(\\d+(?:\\.\\d+)?)\\*(\\d+(?:\\.\\d+)?)\\*(\\d+(?:\\.\\d+)?)/);
+    const match = categoryName.match(/(\d+(?:\.\d+)?)\*(\d+(?:\.\d+)?)\*(\d+(?:\.\d+)?)/);
     if (match) {
         return {
             thickness: parseFloat(match[1]),
