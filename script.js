@@ -643,7 +643,7 @@ async function exportToPdf() {
         }
         
         // 新增：显示面积，保留3位小数
-        const areaStr = item.area > 0 ? `（面积: ${(item.totalArea).toFixed(3)}㎡）` : '';
+        const areaStr = item.area > 0 ? ` (Area: ${(item.totalArea).toFixed(3)} m^2)` : '';
         doc.text(`${item.name}: ${item.quantity}${areaStr}`, margin + 5, y);
         y += textHeight;
     });
