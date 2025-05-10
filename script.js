@@ -818,6 +818,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Populate menu and update placeholder visibility
     populateMenu();
     updatePlaceholderVisibility();
+    updateSelectionStats();
 });
 
 // 辅助函数：从分类名解析尺寸
@@ -837,4 +838,32 @@ function parseSizeFromCategoryName(categoryName) {
 // 辅助函数：计算面积（平方米）
 function calcArea(width, length) {
     return (width / 1000) * (length / 1000);
+}
+
+function updateSelectionStats() {
+    const selectedSwatches = Array.from(document.getElementById('selected-swatches').querySelectorAll('.swatch-item'));
+    let totalQuantity = 0;
+    let totalArea = 0;
+
+    selectedSwatches.forEach(swatchElement => {
+        const quantity = parseInt(swatchElement.dataset.count || '1', 10);
+        totalQuantity += quantity;
+
+        // 计算面积
+        let area = 0;
+        for (const cat of categories) {
+            if (cat.swatches.some(s => s.id === swatchElement.dataset.id)) {
+                const size = parseSizeFromCategoryName(cat.name);
+                if (size) {
+                    area = calcArea(size.width, size.length);
+                }
+                break;
+            }
+        }
+        totalArea += area * quantity;
+    });
+
+    const totalAreaFt2 = totalArea * 10.7639;
+    const statsDiv = document.getElementById('selection-stats');
+    statsDiv.textContent = `Total: ${totalQuantity}   Area: ${totalArea.toFixed(3)} m^2 / ${totalAreaFt2.toFixed(3)} ft^2`;
 }
