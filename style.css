@@ -417,3 +417,21 @@ body {
     transition: transform 0.2s ease; /* 添加过渡效果 */
 }
 }
+
+.selection-stats {
+    font-size: 0.9em;
+    color: #888;
+    margin-bottom: 8px;
+    margin-top: -8px;
+    text-align: right;
+    min-height: 18px;
+    letter-spacing: 0.5px;
+    user-select: none;
+}
+@media (max-width: 767px) {
+    .selection-stats {
+        text-align: left;
+        font-size: 0.95em;
+        margin-top: 0;
+    }
+}
