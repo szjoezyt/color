@@ -487,8 +487,12 @@ async function exportToPdf() {
         // ===========================================
 
         totalQuantity += quantity;
-        summaryItems.push({ name: imageName, quantity: quantity });
-
+        summaryItems.push({
+            name: imageName,
+            quantity: quantity,
+            area: area, // 单件面积（平方米）
+            totalArea: totalSwatchArea // 总面积（平方米）
+        });
         // 加载图片
         const imageLoadPromise = loadImageData(imageSrc)
             .then(imgData => {
@@ -659,6 +663,11 @@ async function exportToPdf() {
     
     // 保存PDF
     doc.save('selected_swatches.pdf');
+
+    let totalArea = 0;
+    summaryItems.forEach(item => {
+        totalArea += item.totalArea;
+    });
 }
 
 // 添加页码的辅助函数
