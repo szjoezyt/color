@@ -163,6 +163,50 @@ const categories = [
             { id: "s2421", name: "2421", image: "images/2421.jpg" },
             { id: "s2422", name: "2422", image: "images/2422.jpg" }
         ]
+    },
+    {
+        id: "regularfelt",
+        name: "REGULAR FELT\n3*1500*20000mm",
+        color: "#B0C4DE", // Light Steel Blue
+        swatches: [
+            { id: "PMZ01", name: "PMZ01", image: "images/PMZ01.jpg" },
+            { id: "PMZ02", name: "PMZ02", image: "images/PMZ02.jpg" },
+            { id: "PMZ03", name: "PMZ03", image: "images/PMZ03.jpg" },
+            { id: "PMZ04", name: "PMZ04", image: "images/PMZ04.jpg" },
+            { id: "PMZ05", name: "PMZ05", image: "images/PMZ05.jpg" },
+            { id: "PMZ06", name: "PMZ06", image: "images/PMZ06.jpg" },
+            { id: "PMZ07", name: "PMZ07", image: "images/PMZ07.jpg" },
+            { id: "PMZ08", name: "PMZ08", image: "images/PMZ08.jpg" },
+            { id: "PMZ09", name: "PMZ09", image: "images/PMZ09.jpg" },
+            { id: "PMZ10", name: "PMZ10", image: "images/PMZ10.jpg" },
+            { id: "PMZ11", name: "PMZ11", image: "images/PMZ11.jpg" },
+            { id: "PMZ13", name: "PMZ13", image: "images/PMZ13.jpg" },
+            { id: "PMZ14", name: "PMZ14", image: "images/PMZ14.jpg" },
+            { id: "PMZ15", name: "PMZ15", image: "images/PMZ15.jpg" },
+            { id: "PMZ16", name: "PMZ16", image: "images/PMZ16.jpg" },
+            { id: "PMZ17", name: "PMZ17", image: "images/PMZ17.jpg" },
+            { id: "PMZ19", name: "PMZ19", image: "images/PMZ19.jpg" },
+            { id: "PMZ20", name: "PMZ20", image: "images/PMZ20.jpg" }
+        ]
+    },
+    {
+        id: "villousfelt",
+        name: "VILLOUS FELT\n3*1850*50000mm",
+        color: "#E6CFE6", // Light Purple
+        swatches: [
+            { id: "QMZ-01", name: "QMZ-01", image: "images/QMZ-01.jpg" },
+            { id: "QMZ-02", name: "QMZ-02", image: "images/QMZ-02.jpg" },
+            { id: "QMZ-03", name: "QMZ-03", image: "images/QMZ-03.jpg" },
+            { id: "QMZ-04", name: "QMZ-04", image: "images/QMZ-04.jpg" },
+            { id: "QMZ-05", name: "QMZ-05", image: "images/QMZ-05.jpg" },
+            { id: "QMZ-06", name: "QMZ-06", image: "images/QMZ-06.jpg" },
+            { id: "QMZ-07", name: "QMZ-07", image: "images/QMZ-07.jpg" },
+            { id: "QMZ-08", name: "QMZ-08", image: "images/QMZ-08.jpg" },
+            { id: "QMZ-09", name: "QMZ-09", image: "images/QMZ-09.jpg" },
+            { id: "QMZ-10", name: "QMZ-10", image: "images/QMZ-10.jpg" },
+            { id: "QMZ-11", name: "QMZ-11", image: "images/QMZ-11.jpg" },
+            { id: "QMZ-12", name: "QMZ-12", image: "images/QMZ-12.jpg" }
+        ]
     }
 ];
 
